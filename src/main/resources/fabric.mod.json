@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "herobrineai",
+  "version": "${version}",
+  "name": "Herobrine AI",
+  "description": "An AI-driven, persistent Herobrine experience for Minecraft Java 26.1+ with staged behavior, multiplayer awareness, contextual dialogue, and ritual-driven endgame systems.",
+  "authors": ["Manish Rana"],
+  "license": "CC0-1.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.example.HerobrineMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.1",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
