@@ -37,9 +37,35 @@ public final class HerobrineManager {
             return;
         }
 
+        HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
+        long currentDay = level.getGameTime() / 24000L;
+
+        if (level.dimension() == ServerLevel.OVERWORLD) {
+            state.initializeLifecycle(currentDay, level.getRandom());
+
+            if (!state.isStage2Unlocked()
+                    && state.getStage2Day() >= 0L
+                    && currentDay >= state.getStage2Day()) {
+                state.unlockStage2();
+                HerobrineMod.LOGGER.info(
+                        "Global Herobrine Stage 2 unlocked on day {}",
+                        currentDay
+                );
+            }
+        }
+
         List<HerobrineEntity> nearbyEntities = collectNearbyHerobrines(level);
 
         for (HerobrineEntity herobrine : nearbyEntities) {
+            if (state.isPermanentlyDefeated()) {
+                herobrine.discard();
+                continue;
+            }
+
+            if (state.isStage2Unlocked() && herobrine.getStage() == HerobrineStage.STAGE_1) {
+                herobrine.setStage(HerobrineStage.STAGE_2);
+            }
+
             for (ServerPlayer player : level.players()) {
                 if (player.isAlive() && herobrine.distanceToSqr(player) <= TRACK_RANGE * TRACK_RANGE) {
                     herobrine.enforcePlayerRestrictions(player);
@@ -47,8 +73,14 @@ public final class HerobrineManager {
             }
         }
 
-        // Lightweight Stage 1 appearance chance during nighttime.
-        if (nearbyEntities.isEmpty()
+        if (state.isPermanentlyDefeated()) {
+            return;
+        }
+
+        // Lightweight Stage 1 appearance chance during nighttime in the overworld.
+        if (level.dimension() == ServerLevel.OVERWORLD
+                && !state.isStage2Unlocked()
+                && nearbyEntities.isEmpty()
                 && isNight(level)
                 && level.getGameTime() % NIGHT_SPAWN_CHECK_INTERVAL == 0L
                 && !level.players().isEmpty()
@@ -100,6 +132,11 @@ public final class HerobrineManager {
             return;
         }
 
+        HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
+        if (state.isPermanentlyDefeated()) {
+            return;
+        }
+
         HerobrineEntity herobrine = findNearest(level, player, TRACK_RANGE);
 
         if (herobrine == null) {
@@ -126,7 +163,11 @@ public final class HerobrineManager {
         );
 
         if (entity != null) {
-            entity.setStage(HerobrineStage.STAGE_1);
+            entity.setStage(
+                    HerobrineWorldState.get(level.getServer()).isStage2Unlocked()
+                            ? HerobrineStage.STAGE_2
+                            : HerobrineStage.STAGE_1
+            );
         }
 
         return entity;
