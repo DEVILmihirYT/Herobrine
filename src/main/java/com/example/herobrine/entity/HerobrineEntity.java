@@ -243,7 +243,7 @@ public class HerobrineEntity extends PathfinderMob {
     }
 
     private static boolean isNight(Level level) {
-        long timeOfDay = level.getDayTime() % 24000L;
+        long timeOfDay = level.getGameTime() % 24000L;
         return timeOfDay >= 13000L && timeOfDay < 23000L;
     }
 
