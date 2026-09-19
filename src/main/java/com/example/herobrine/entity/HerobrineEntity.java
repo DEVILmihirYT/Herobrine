@@ -2,9 +2,13 @@ package com.example.herobrine.entity;
 
 import com.example.HerobrineMod;
 import com.example.herobrine.HerobrineStage;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -14,12 +18,20 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class HerobrineEntity extends PathfinderMob {
+    private static final double PLAYER_INTERACTION_RANGE = 100.0D;
+    private static final double STAGE3_ACTIVE_RANGE = 50.0D;
+    private static final double STAGE3_SPEED = 0.40D;
+    private static final double STAGE3_MAX_HEALTH = 1_000_000.0D;
+    private static final double NORMAL_MAX_HEALTH = 20.0D;
+
     private HerobrineStage stage = HerobrineStage.STAGE_1;
     private long lifecycleStartDay = -1L;
     private long stage2Day = -1L;
     private long stage3Day = -1L;
+    private int retreatTicks = 0;
 
     public HerobrineEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -29,11 +41,6 @@ public class HerobrineEntity extends PathfinderMob {
         return stage;
     }
 
-    /**
-     * Changes the entity's stage on the server.
-     * Stage 3 is intentionally not triggered automatically yet; later systems
-     * will decide when a Stage 3 encounter is actually justified.
-     */
     public void setStage(HerobrineStage newStage) {
         if (newStage == null || newStage == stage) {
             return;
@@ -41,6 +48,7 @@ public class HerobrineEntity extends PathfinderMob {
 
         HerobrineStage previousStage = stage;
         stage = newStage;
+        applyStageAttributes();
 
         if (!level().isClientSide()) {
             HerobrineMod.LOGGER.info(
@@ -62,6 +70,11 @@ public class HerobrineEntity extends PathfinderMob {
 
     public long getStage3Day() {
         return stage3Day;
+    }
+
+    @Override
+    public Component getName() {
+        return Component.literal(stage == HerobrineStage.STAGE_3 ? "Herobrine" : "Hero");
     }
 
     @Override
@@ -89,13 +102,14 @@ public class HerobrineEntity extends PathfinderMob {
         } catch (IllegalArgumentException ignored) {
             stage = HerobrineStage.STAGE_1;
         }
+
+        applyStageAttributes();
     }
 
     @Override
     protected void registerGoals() {
         super.registerGoals();
 
-        // Stage 1/2 can defend the area against hostile mobs, but never target players.
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Monster>(
                 this,
                 Monster.class,
@@ -105,8 +119,6 @@ public class HerobrineEntity extends PathfinderMob {
                 (target, level) -> stage != HerobrineStage.STAGE_3
         ));
 
-        // Stage 3 is the player-hunting state. The selector keeps this goal
-        // dormant during Stage 1/2 without rebuilding the goal selector.
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<Player>(
                 this,
                 Player.class,
@@ -142,15 +154,9 @@ public class HerobrineEntity extends PathfinderMob {
         }
 
         advanceScheduledStages(currentDay);
+        tickStageBehavior();
     }
 
-    /**
-     * Applies only the currently safe automatic lifecycle transition:
-     * Stage 1 -> Stage 2 when the scheduled day is reached.
-     *
-     * Stage 3 remains event-driven and will be controlled later by the
-     * grudge/revenge and encounter systems.
-     */
     private void advanceScheduledStages(long currentDay) {
         if (stage == HerobrineStage.STAGE_1 && stage2Day >= 0L && currentDay >= stage2Day) {
             setStage(HerobrineStage.STAGE_2);
@@ -161,6 +167,99 @@ public class HerobrineEntity extends PathfinderMob {
         }
     }
 
+    private void tickStageBehavior() {
+        if (stage == HerobrineStage.STAGE_3) {
+            tickStage3Behavior();
+            return;
+        }
+
+        if (level().isNight()) {
+            tickNightApproach();
+        }
+    }
+
+    private void tickNightApproach() {
+        if (tickCount % 20 != 0) {
+            return;
+        }
+
+        Player nearest = findNearestPlayer(PLAYER_INTERACTION_RANGE);
+        if (nearest == null) {
+            return;
+        }
+
+        double distance = distanceTo(nearest);
+        if (distance < 7.0D) {
+            getNavigation().stop();
+            return;
+        }
+
+        double speed = stage == HerobrineStage.STAGE_1 ? 0.55D : 0.65D;
+        getNavigation().moveTo(nearest, speed);
+    }
+
+    private void tickStage3Behavior() {
+        Player target = getTarget() instanceof Player player ? player : null;
+        if (target == null || !target.isAlive() || distanceTo(target) > STAGE3_ACTIVE_RANGE) {
+            setTarget(null);
+            discard();
+            return;
+        }
+
+        if (retreatTicks > 0) {
+            retreatTicks--;
+            getNavigation().stop();
+            Vec3 away = position().subtract(target.position());
+            if (away.lengthSqr() > 0.001D) {
+                setDeltaMovement(away.normalize().scale(0.24D));
+            }
+            return;
+        }
+
+        // Stage 3 can move vertically toward the player instead of being confined
+        // to normal ground navigation. The server remains authoritative.
+        if (!onGround() && distanceTo(target) > 2.5D) {
+            Vec3 towardTarget = target.getEyePosition().subtract(getEyePosition());
+            if (towardTarget.lengthSqr() > 0.001D) {
+                setDeltaMovement(towardTarget.normalize().scale(STAGE3_SPEED));
+            }
+        }
+    }
+
+    private Player findNearestPlayer(double range) {
+        double rangeSqr = range * range;
+        Player nearest = null;
+        double nearestDistanceSqr = rangeSqr;
+
+        for (Player player : level().players()) {
+            if (!player.isAlive()) {
+                continue;
+            }
+
+            double distanceSqr = distanceToSqr(player);
+            if (distanceSqr <= nearestDistanceSqr) {
+                nearest = player;
+                nearestDistanceSqr = distanceSqr;
+            }
+        }
+
+        return nearest;
+    }
+
+    @Override
+    public boolean doHurtTarget(net.minecraft.world.entity.Entity target) {
+        boolean hurt = super.doHurtTarget(target);
+
+        if (hurt && stage == HerobrineStage.STAGE_3 && target instanceof Player player) {
+            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 140));
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 140));
+            retreatTicks = 30;
+        }
+
+        return hurt;
+    }
+
+    @Override
     public boolean hurtServer(ServerLevel level,
                               net.minecraft.world.damagesource.DamageSource source,
                               float amount) {
@@ -174,9 +273,38 @@ public class HerobrineEntity extends PathfinderMob {
         return super.hurtServer(level, source, amount);
     }
 
+    private void applyStageAttributes() {
+        AttributeInstance maxHealth = getAttribute(Attributes.MAX_HEALTH);
+        AttributeInstance movementSpeed = getAttribute(Attributes.MOVEMENT_SPEED);
+        AttributeInstance attackDamage = getAttribute(Attributes.ATTACK_DAMAGE);
+        AttributeInstance knockbackResistance = getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+
+        if (maxHealth == null || movementSpeed == null || attackDamage == null || knockbackResistance == null) {
+            return;
+        }
+
+        if (stage == HerobrineStage.STAGE_3) {
+            maxHealth.setBaseValue(STAGE3_MAX_HEALTH);
+            movementSpeed.setBaseValue(STAGE3_SPEED);
+            attackDamage.setBaseValue(8.0D);
+            knockbackResistance.setBaseValue(1.0D);
+            setNoGravity(true);
+            setHealth((float) STAGE3_MAX_HEALTH);
+        } else {
+            maxHealth.setBaseValue(NORMAL_MAX_HEALTH);
+            movementSpeed.setBaseValue(stage == HerobrineStage.STAGE_2 ? 0.28D : 0.25D);
+            attackDamage.setBaseValue(stage == HerobrineStage.STAGE_2 ? 4.0D : 3.0D);
+            knockbackResistance.setBaseValue(0.0D);
+            setNoGravity(false);
+            setHealth(Math.min(getHealth(), (float) NORMAL_MAX_HEALTH));
+        }
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.25);
+                .add(Attributes.MAX_HEALTH, NORMAL_MAX_HEALTH)
+                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                .add(Attributes.ATTACK_DAMAGE, 3.0D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.0D);
     }
 }
