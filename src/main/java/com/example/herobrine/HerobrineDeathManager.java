@@ -53,12 +53,12 @@ public final class HerobrineDeathManager {
             return;
         }
 
-        int remainingKills = 2 + player.serverLevel().getRandom().nextInt(2);
+        int remainingKills = 2 + ((ServerLevel) player.level()).getRandom().nextInt(2);
         SEQUENCES.put(
                 playerId,
                 new DeathSequence(
                         player.position(),
-                        player.serverLevel().dimension(),
+                        ((ServerLevel) player.level()).dimension(),
                         remainingKills
                 )
         );
@@ -80,7 +80,7 @@ public final class HerobrineDeathManager {
             return;
         }
 
-        if (newPlayer.serverLevel().dimension() != sequence.deathDimension()) {
+        if (((ServerLevel) newPlayer.level()).dimension() != sequence.deathDimension()) {
             finishSequence(newPlayer);
             return;
         }
@@ -88,7 +88,7 @@ public final class HerobrineDeathManager {
         Vec3 respawnPosition = newPlayer.position();
         double distanceFromDeath = respawnPosition.distanceTo(sequence.deathPosition());
 
-        boolean worldSpawn = isNearWorldSpawn(newPlayer.serverLevel(), respawnPosition);
+        boolean worldSpawn = isNearWorldSpawn(((ServerLevel) newPlayer.level()), respawnPosition);
         boolean nearbyBedOrBase = !worldSpawn && distanceFromDeath <= NEAR_RESPAWN_RANGE;
 
         if (!worldSpawn && !nearbyBedOrBase) {
@@ -108,7 +108,7 @@ public final class HerobrineDeathManager {
         }
 
         herobrine.setStage(HerobrineStage.STAGE_3);
-        herobrine.markStage3Activated(newPlayer.serverLevel().getGameTime() / 24000L);
+        herobrine.markStage3Activated(((ServerLevel) newPlayer.level()).getGameTime() / 24000L);
         herobrine.setTarget(newPlayer);
         herobrine.setPos(
                 newPlayer.getX() + 2.0D,
@@ -117,7 +117,7 @@ public final class HerobrineDeathManager {
         );
 
         if (nearbyBedOrBase) {
-            damageNearbyBase(newPlayer.serverLevel(), herobrine, newPlayer.blockPosition());
+            damageNearbyBase(((ServerLevel) newPlayer.level()), herobrine, newPlayer.blockPosition());
             announceBaseEncounter(newPlayer);
         } else {
             newPlayer.sendSystemMessage(
@@ -143,18 +143,18 @@ public final class HerobrineDeathManager {
                 sequence.withRemainingKills(remainingKills - 1)
         );
 
-        newPlayer.kill(newPlayer.serverLevel());
+        newPlayer.kill(((ServerLevel) newPlayer.level()));
     }
 
     private static boolean isNearWorldSpawn(ServerLevel level, Vec3 position) {
-        BlockPos spawn = level.getSharedSpawnPos();
+        BlockPos spawn = level.getRespawnData().pos();
         double dx = position.x - (spawn.getX() + 0.5D);
         double dz = position.z - (spawn.getZ() + 0.5D);
         return dx * dx + dz * dz <= 32.0D * 32.0D;
     }
 
     private static HerobrineEntity findOrSpawnHerobrine(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = ((ServerLevel) player.level());
 
         for (HerobrineEntity entity : level.getEntitiesOfClass(
                 HerobrineEntity.class,
@@ -179,7 +179,7 @@ public final class HerobrineDeathManager {
     }
 
     private static void discardNearbyHerobrines(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = ((ServerLevel) player.level());
 
         for (HerobrineEntity entity : level.getEntitiesOfClass(
                 HerobrineEntity.class,
