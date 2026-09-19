@@ -2,8 +2,12 @@ package com.example.herobrine.entity;
 
 import com.example.HerobrineMod;
 import com.example.herobrine.HerobrineStage;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -17,6 +21,7 @@ import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -32,6 +37,7 @@ public class HerobrineEntity extends PathfinderMob {
     private long stage2Day = -1L;
     private long stage3Day = -1L;
     private int retreatTicks = 0;
+    private final Set<UUID> interactionBlockedPlayers = new HashSet<>();
 
     public HerobrineEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -48,6 +54,7 @@ public class HerobrineEntity extends PathfinderMob {
 
         HerobrineStage previousStage = stage;
         stage = newStage;
+        interactionBlockedPlayers.clear();
         applyStageAttributes();
 
         if (!level().isClientSide()) {
@@ -70,6 +77,62 @@ public class HerobrineEntity extends PathfinderMob {
 
     public long getStage3Day() {
         return stage3Day;
+    }
+
+    public void markStage3Activated(long day) {
+        stage3Day = day;
+    }
+
+    public boolean isInteractionBlocked(UUID playerId) {
+        return interactionBlockedPlayers.contains(playerId);
+    }
+
+    /**
+     * Enforces the staged Creative/Operator rules on the server.
+     * Stage 3 always removes operator status and Creative mode.
+     * Stage 1/2 suppress interaction with players that are Creative or Operator.
+     */
+    public void enforcePlayerRestrictions(ServerPlayer player) {
+        if (stage == HerobrineStage.STAGE_3) {
+            boolean changed = false;
+
+            if (player.gameMode.getGameModeForPlayer() == GameType.CREATIVE) {
+                player.setGameMode(GameType.SURVIVAL);
+                changed = true;
+            }
+
+            if (player.hasPermissions(2)) {
+                player.level().getServer().getPlayerList().deop(player.getGameProfile());
+                changed = true;
+            }
+
+            if (changed) {
+                player.sendSystemMessage(Component.literal(
+                        "Herobrine: Creative/Operator privileges are not allowed during Stage 3."
+                ));
+            }
+            interactionBlockedPlayers.remove(player.getUUID());
+            return;
+        }
+
+        boolean restricted = player.gameMode.getGameModeForPlayer() == GameType.CREATIVE
+                || player.hasPermissions(2);
+
+        if (restricted) {
+            if (interactionBlockedPlayers.add(player.getUUID())) {
+                player.sendSystemMessage(Component.literal(
+                        player.getName().getString()
+                                + " did create/operator, am shutting down for you."
+                ));
+            }
+            return;
+        }
+
+        if (interactionBlockedPlayers.remove(player.getUUID())) {
+            player.sendSystemMessage(Component.literal(
+                    "Hero: You are back to Member + Survival. I am active again."
+            ));
+        }
     }
 
     @Override
