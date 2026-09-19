@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -96,13 +97,13 @@ public class HerobrineEntity extends PathfinderMob {
         if (stage == HerobrineStage.STAGE_3) {
             boolean changed = false;
 
-            if (player.gameMode.getGameModeForPlayer() == GameType.CREATIVE) {
+            if (player.gameMode() == GameType.CREATIVE) {
                 player.setGameMode(GameType.SURVIVAL);
                 changed = true;
             }
 
-            if (player.hasPermissions(2)) {
-                player.level().getServer().getPlayerList().deop(player.getGameProfile());
+            if (player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)) {
+                player.level().getServer().getPlayerList().deop(player.nameAndId());
                 changed = true;
             }
 
@@ -115,8 +116,8 @@ public class HerobrineEntity extends PathfinderMob {
             return;
         }
 
-        boolean restricted = player.gameMode.getGameModeForPlayer() == GameType.CREATIVE
-                || player.hasPermissions(2);
+        boolean restricted = player.gameMode() == GameType.CREATIVE
+                || player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR);
 
         if (restricted) {
             if (interactionBlockedPlayers.add(player.getUUID())) {
@@ -236,9 +237,14 @@ public class HerobrineEntity extends PathfinderMob {
             return;
         }
 
-        if (level().isNight()) {
+        if (isNight(level())) {
             tickNightApproach();
         }
+    }
+
+    private static boolean isNight(Level level) {
+        long timeOfDay = level.getDayTime() % 24000L;
+        return timeOfDay >= 13000L && timeOfDay < 23000L;
     }
 
     private void tickNightApproach() {
@@ -310,12 +316,12 @@ public class HerobrineEntity extends PathfinderMob {
     }
 
     @Override
-    public boolean doHurtTarget(net.minecraft.world.entity.Entity target) {
-        boolean hurt = super.doHurtTarget(target);
+    public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
+        boolean hurt = super.doHurtTarget(level, target);
 
         if (hurt && stage == HerobrineStage.STAGE_3 && target instanceof Player player) {
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 140));
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 140));
+            player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 140));
             retreatTicks = 30;
         }
 
