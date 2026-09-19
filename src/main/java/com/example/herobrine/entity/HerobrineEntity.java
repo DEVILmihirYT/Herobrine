@@ -7,6 +7,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 public class HerobrineEntity extends PathfinderMob {
@@ -83,6 +89,36 @@ public class HerobrineEntity extends PathfinderMob {
         } catch (IllegalArgumentException ignored) {
             stage = HerobrineStage.STAGE_1;
         }
+    }
+
+    @Override
+    protected void registerGoals() {
+        super.registerGoals();
+
+        // Stage 1/2 can defend the area against hostile mobs, but never target players.
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
+                this,
+                Monster.class,
+                10,
+                true,
+                false,
+                target -> stage != HerobrineStage.STAGE_3
+        ));
+
+        // Stage 3 is the player-hunting state. The predicate keeps this goal
+        // dormant during Stage 1/2 without rebuilding the goal selector.
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
+                this,
+                Player.class,
+                10,
+                true,
+                false,
+                target -> stage == HerobrineStage.STAGE_3
+        ));
+
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
+        this.goalSelector.addGoal(7, new RandomStrollGoal(this, 0.7D));
+        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
     }
 
     @Override
