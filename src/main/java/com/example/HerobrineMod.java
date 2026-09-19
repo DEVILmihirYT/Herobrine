@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.herobrine.HerobrineDeathManager;
 import com.example.herobrine.HerobrineManager;
+import com.example.herobrine.item.ModItems;
 import com.example.herobrine.entity.ModEntityTypes;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ public class HerobrineMod implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("Herobrine AI is initializing...");
         ModEntityTypes.registerModEntityTypes();
+        ModItems.registerModItems();
         HerobrineManager.initialize();
         HerobrineDeathManager.initialize();
     }
