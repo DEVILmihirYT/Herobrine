@@ -205,30 +205,7 @@ public class HerobrineEntity extends PathfinderMob {
             return;
         }
 
-        long currentDay = level().getGameTime() / 24000L;
-
-        if (lifecycleStartDay < 0L) {
-            lifecycleStartDay = currentDay;
-            stage2Day = currentDay + 10L + getRandom().nextInt(6);
-
-            HerobrineMod.LOGGER.info(
-                    "Herobrine Stage 1 lifecycle started: Stage 2 scheduled for day {}",
-                    stage2Day
-            );
-        }
-
-        advanceScheduledStages(currentDay);
         tickStageBehavior();
-    }
-
-    private void advanceScheduledStages(long currentDay) {
-        if (stage == HerobrineStage.STAGE_1 && stage2Day >= 0L && currentDay >= stage2Day) {
-            setStage(HerobrineStage.STAGE_2);
-            HerobrineMod.LOGGER.info(
-                    "Herobrine automatically entered Stage 2 on day {}",
-                    currentDay
-            );
-        }
     }
 
     private void tickStageBehavior() {
