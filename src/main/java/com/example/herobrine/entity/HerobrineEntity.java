@@ -96,24 +96,24 @@ public class HerobrineEntity extends PathfinderMob {
         super.registerGoals();
 
         // Stage 1/2 can defend the area against hostile mobs, but never target players.
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Monster>(
                 this,
                 Monster.class,
                 10,
                 true,
                 false,
-                target -> stage != HerobrineStage.STAGE_3
+                (target, level) -> stage != HerobrineStage.STAGE_3
         ));
 
-        // Stage 3 is the player-hunting state. The predicate keeps this goal
+        // Stage 3 is the player-hunting state. The selector keeps this goal
         // dormant during Stage 1/2 without rebuilding the goal selector.
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<Player>(
                 this,
                 Player.class,
                 10,
                 true,
                 false,
-                target -> stage == HerobrineStage.STAGE_3
+                (target, level) -> stage == HerobrineStage.STAGE_3
         ));
 
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
