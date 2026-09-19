@@ -116,7 +116,7 @@ public final class HerobrineManager {
     }
 
     private static HerobrineEntity spawnStage1(ServerLevel level) {
-        ServerPlayer player = level.players().get(level.random.nextInt(level.players().size()));
+        ServerPlayer player = level.players().get(level.getRandom().nextInt(level.players().size()));
         BlockPos spawnPos = findBehindPlayerPosition(level, player, 12.0D, 24.0D);
 
         HerobrineEntity entity = ModEntityTypes.HEROBRINE.spawn(
@@ -162,7 +162,6 @@ public final class HerobrineManager {
                 position.getY(),
                 position.getZ() + 0.5D
         );
-        entity.setRot(player.getYRot(), 0.0F);
 
         if (preferHidden && player.hasLineOfSight(entity)) {
             for (int i = 0; i < 6 && player.hasLineOfSight(entity); i++) {
@@ -192,7 +191,7 @@ public final class HerobrineManager {
             horizontal = horizontal.normalize();
         }
 
-        double distance = minDistance + level.random.nextDouble() * (maxDistance - minDistance);
+        double distance = minDistance + level.getRandom().nextDouble() * (maxDistance - minDistance);
         double x = player.getX() - horizontal.x * distance;
         double z = player.getZ() - horizontal.z * distance;
         int blockX = (int) Math.floor(x);
@@ -214,7 +213,7 @@ public final class HerobrineManager {
     }
 
     private static boolean isNight(ServerLevel level) {
-        long timeOfDay = level.getDayTime() % 24000L;
+        long timeOfDay = level.getGameTime() % 24000L;
         return timeOfDay >= 13000L && timeOfDay < 23000L;
     }
 
