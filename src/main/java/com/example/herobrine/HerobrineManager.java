@@ -40,6 +40,8 @@ public final class HerobrineManager {
             return;
         }
 
+        GrudgeManager.tick(level);
+
         HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
         long currentDay = level.getGameTime() / 24000L;
 
