@@ -3,6 +3,7 @@ package com.example.herobrine;
 import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
+import com.example.herobrine.item.ModItems;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -12,6 +13,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -37,6 +40,20 @@ public final class HerobrineDeathManager {
             net.minecraft.world.entity.LivingEntity entity,
             net.minecraft.world.damagesource.DamageSource source
     ) {
+        if (entity instanceof HerobrineEntity herobrine
+                && herobrine.getStage() == HerobrineStage.STAGE_1
+                && herobrine.level() instanceof ServerLevel level) {
+            ItemEntity mashaal = new ItemEntity(
+                    level,
+                    herobrine.getX(),
+                    herobrine.getY() + 0.5D,
+                    herobrine.getZ(),
+                    new ItemStack(ModItems.MASHAAL)
+            );
+            level.addFreshEntity(mashaal);
+            return;
+        }
+
         if (!(entity instanceof ServerPlayer player)) {
             return;
         }
