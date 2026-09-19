@@ -59,7 +59,8 @@ public final class HerobrineDeathManager {
                 new DeathSequence(
                         player.position(),
                         ((ServerLevel) player.level()).dimension(),
-                        remainingKills
+                        remainingKills,
+                        false
                 )
         );
 
@@ -117,7 +118,11 @@ public final class HerobrineDeathManager {
         );
 
         if (nearbyBedOrBase) {
-            damageNearbyBase(((ServerLevel) newPlayer.level()), herobrine, newPlayer.blockPosition());
+            if (!sequence.baseDamaged()) {
+                damageNearbyBase((ServerLevel) newPlayer.level(), herobrine, newPlayer.blockPosition());
+                sequence = sequence.withBaseDamaged(true);
+                SEQUENCES.put(newPlayer.getUUID(), sequence);
+            }
             announceBaseEncounter(newPlayer);
         } else {
             newPlayer.sendSystemMessage(
@@ -243,10 +248,15 @@ public final class HerobrineDeathManager {
     private record DeathSequence(
             Vec3 deathPosition,
             net.minecraft.resources.ResourceKey<Level> deathDimension,
-            int remainingKills
+            int remainingKills,
+            boolean baseDamaged
     ) {
         private DeathSequence withRemainingKills(int value) {
-            return new DeathSequence(deathPosition, deathDimension, value);
+            return new DeathSequence(deathPosition, deathDimension, value, baseDamaged);
+        }
+
+        private DeathSequence withBaseDamaged(boolean value) {
+            return new DeathSequence(deathPosition, deathDimension, remainingKills, value);
         }
     }
 }
