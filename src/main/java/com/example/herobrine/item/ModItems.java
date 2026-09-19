@@ -2,6 +2,7 @@ package com.example.herobrine.item;
 
 import com.example.HerobrineMod;
 import java.util.function.Function;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -17,6 +18,9 @@ public final class ModItems {
     );
 
     public static void registerModItems() {
+        CreativeModeTabEvents.modifyOutputEvent(net.minecraft.world.item.CreativeModeTabs.TOOLS_AND_UTILITIES)
+                .register(output -> output.accept(MASHAAL));
+
         HerobrineMod.LOGGER.info("Registering Herobrine Mashaal");
     }
 
