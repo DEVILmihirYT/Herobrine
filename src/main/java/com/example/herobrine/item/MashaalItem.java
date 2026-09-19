@@ -5,46 +5,31 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public final class MashaalItem extends Item {
-    private static final int PARTICLE_INTERVAL = 4;
-
     public MashaalItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    public void inventoryTick(
-            ItemStack stack,
-            Level level,
-            net.minecraft.world.entity.Entity entity,
-            int slot,
-            boolean selected
-    ) {
-        super.inventoryTick(stack, level, entity, slot, selected);
-
-        if (!selected || !(entity instanceof Player player) || level.isClientSide()) {
-            return;
-        }
-
-        if (level.getGameTime() % PARTICLE_INTERVAL == 0L) {
-            level.addParticle(
-                    ParticleTypes.FLAME,
-                    player.getX(),
-                    player.getEyeY() - 0.18D,
-                    player.getZ(),
-                    0.0D,
-                    0.025D,
-                    0.0D
-            );
-        }
-    }
-
-    @Override
     public InteractionResult use(Level level, Player user, InteractionHand hand) {
         if (!level.isClientSide()) {
+            Vec3 flamePos = user.getEyePosition().add(user.getLookAngle().scale(0.55D));
+
+            for (int i = 0; i < 3; i++) {
+                level.addParticle(
+                        ParticleTypes.FLAME,
+                        flamePos.x,
+                        flamePos.y + i * 0.05D,
+                        flamePos.z,
+                        0.0D,
+                        0.025D,
+                        0.0D
+                );
+            }
+
             level.playSound(
                     null,
                     user.blockPosition(),
