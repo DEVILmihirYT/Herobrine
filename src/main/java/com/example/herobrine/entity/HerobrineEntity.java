@@ -38,6 +38,7 @@ public class HerobrineEntity extends PathfinderMob {
     private long stage2Day = -1L;
     private long stage3Day = -1L;
     private int retreatTicks = 0;
+    private int stage3AttackCooldownTicks = 0;
     private final Set<UUID> interactionBlockedPlayers = new HashSet<>();
 
     public HerobrineEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
@@ -189,7 +190,7 @@ public class HerobrineEntity extends PathfinderMob {
                 10,
                 true,
                 false,
-                (target, level) -> stage == HerobrineStage.STAGE_3
+                (target, level) -> stage == HerobrineStage.STAGE_3 && stage3AttackCooldownTicks <= 0
         ));
 
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
@@ -246,6 +247,21 @@ public class HerobrineEntity extends PathfinderMob {
 
     private void tickStage3Behavior() {
         Player target = getTarget() instanceof Player player ? player : null;
+
+        if (stage3AttackCooldownTicks > 0) {
+            setTarget(null);
+            getNavigation().stop();
+
+            if (target != null) {
+                Vec3 away = position().subtract(target.position());
+                if (away.lengthSqr() > 0.001D) {
+                    setDeltaMovement(away.normalize().scale(0.24D));
+                }
+            }
+
+            return;
+        }
+
         if (target == null || !target.isAlive() || distanceTo(target) > STAGE3_ACTIVE_RANGE) {
             setTarget(null);
             discard();
@@ -299,7 +315,10 @@ public class HerobrineEntity extends PathfinderMob {
         if (hurt && stage == HerobrineStage.STAGE_3 && target instanceof Player player) {
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 140));
             player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 140));
-            retreatTicks = 30;
+            stage3AttackCooldownTicks = 140;
+            retreatTicks = 40;
+            setTarget(null);
+            getNavigation().stop();
         }
 
         return hurt;
