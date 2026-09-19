@@ -97,7 +97,7 @@ public final class HerobrineWorldState extends SavedData {
         return List.copyOf(players);
     }
 
-    public void initializeLifecycle(long currentDay, java.util.RandomGenerator random) {
+    public void initializeLifecycle(long currentDay, java.util.random.RandomGenerator random) {
         if (lifecycleStartDay >= 0L) {
             return;
         }
