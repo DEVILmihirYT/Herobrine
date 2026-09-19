@@ -171,7 +171,6 @@ public final class HerobrineManager {
                         position.getY(),
                         position.getZ() + 0.5D
                 );
-                entity.setRot(player.getYRot(), 0.0F);
             }
         }
     }
