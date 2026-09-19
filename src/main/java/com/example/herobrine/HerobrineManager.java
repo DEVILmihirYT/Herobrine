@@ -66,6 +66,10 @@ public final class HerobrineManager {
                 herobrine.setStage(HerobrineStage.STAGE_2);
             }
 
+            if (herobrine.getStage() == HerobrineStage.STAGE_2) {
+                HerobrineStageTwoBehavior.tick(level, herobrine);
+            }
+
             for (ServerPlayer player : level.players()) {
                 if (player.isAlive() && herobrine.distanceToSqr(player) <= TRACK_RANGE * TRACK_RANGE) {
                     herobrine.enforcePlayerRestrictions(player);
