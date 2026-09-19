@@ -3,6 +3,7 @@ package com.example.herobrine;
 import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
+import com.example.herobrine.item.ModItems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -13,6 +14,8 @@ import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -172,6 +175,13 @@ public final class HerobrineManager {
                             ? HerobrineStage.STAGE_2
                             : HerobrineStage.STAGE_1
             );
+
+            if (entity.getStage() == HerobrineStage.STAGE_1) {
+                entity.setItemSlot(
+                        EquipmentSlot.MAINHAND,
+                        new ItemStack(ModItems.MASHAAL)
+                );
+            }
         }
 
         return entity;
