@@ -9,6 +9,7 @@ import java.util.UUID;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
@@ -97,7 +98,7 @@ public final class HerobrineWorldState extends SavedData {
         return List.copyOf(players);
     }
 
-    public void initializeLifecycle(long currentDay, java.util.random.RandomGenerator random) {
+    public void initializeLifecycle(long currentDay, RandomSource random) {
         if (lifecycleStartDay >= 0L) {
             return;
         }
