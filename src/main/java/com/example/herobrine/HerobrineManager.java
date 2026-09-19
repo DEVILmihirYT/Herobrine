@@ -49,10 +49,10 @@ public final class HerobrineManager {
 
         // Lightweight Stage 1 appearance chance during nighttime.
         if (nearbyEntities.isEmpty()
-                && level.isNight()
+                && isNight(level)
                 && level.getGameTime() % NIGHT_SPAWN_CHECK_INTERVAL == 0L
                 && !level.players().isEmpty()
-                && level.random.nextInt(8) == 0) {
+                && level.getRandom().nextInt(8) == 0) {
             spawnStage1(level);
         }
     }
@@ -157,24 +157,22 @@ public final class HerobrineManager {
             boolean preferHidden
     ) {
         BlockPos position = findBehindPlayerPosition(level, player, 20.0D, 30.0D);
-        entity.moveTo(
+        entity.setPos(
                 position.getX() + 0.5D,
                 position.getY(),
-                position.getZ() + 0.5D,
-                player.getYRot(),
-                0.0F
+                position.getZ() + 0.5D
         );
+        entity.setRot(player.getYRot(), 0.0F);
 
         if (preferHidden && player.hasLineOfSight(entity)) {
             for (int i = 0; i < 6 && player.hasLineOfSight(entity); i++) {
                 position = findBehindPlayerPosition(level, player, 20.0D, 30.0D);
-                entity.moveTo(
+                entity.setPos(
                         position.getX() + 0.5D,
                         position.getY(),
-                        position.getZ() + 0.5D,
-                        player.getYRot(),
-                        0.0F
+                        position.getZ() + 0.5D
                 );
+                entity.setRot(player.getYRot(), 0.0F);
             }
         }
     }
@@ -213,6 +211,11 @@ public final class HerobrineManager {
         }
 
         return candidate;
+    }
+
+    private static boolean isNight(ServerLevel level) {
+        long timeOfDay = level.getDayTime() % 24000L;
+        return timeOfDay >= 13000L && timeOfDay < 23000L;
     }
 
     private static HerobrineEntity findNearest(
