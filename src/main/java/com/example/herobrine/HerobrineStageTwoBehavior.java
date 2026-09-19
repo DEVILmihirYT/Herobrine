@@ -57,7 +57,7 @@ public final class HerobrineStageTwoBehavior {
         List<Monster> monsters = level.getEntitiesOfClass(
                 Monster.class,
                 player.getBoundingBox().inflate(ACTION_RANGE),
-                monster -> monster.isAlive() && monster != herobrine
+                Monster::isAlive
         );
 
         if (monsters.isEmpty()) {
@@ -84,7 +84,7 @@ public final class HerobrineStageTwoBehavior {
         }
 
         ItemEntity drop = drops.get(herobrine.getRandom().nextInt(drops.size()));
-        drop.setOnFireForTicks(60);
+        drop.setRemainingFireTicks(60);
     }
 
     private static void disturbNearbyLeaves(
