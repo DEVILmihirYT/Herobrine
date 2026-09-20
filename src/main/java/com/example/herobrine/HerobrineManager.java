@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerLevel;
@@ -24,6 +24,8 @@ import net.minecraft.world.phys.Vec3;
 
 public final class HerobrineManager {
     private static final double TRACK_RANGE = 100.0D;
+    private static final HerobrinePlayerTracker PLAYER_TRACKER = new HerobrinePlayerTracker();
+    private static final HerobrineChatMemory CHAT_MEMORY = new HerobrineChatMemory();
 
     private HerobrineManager() {
     }
@@ -33,7 +35,7 @@ public final class HerobrineManager {
         ServerMessageEvents.CHAT_MESSAGE.register(
                 (message, sender, chatType) -> handleChatMention(message, sender)
         );
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> handleFirstJoin(sender));
+        ServerPlayerEvents.JOIN.register(HerobrineManager::handleFirstJoin);
         HerobrineMod.LOGGER.info("Herobrine manager initialized");
     }
 
@@ -64,6 +66,7 @@ public final class HerobrineManager {
         List<HerobrineEntity> nearbyEntities = collectNearbyHerobrines(level);
 
         for (HerobrineEntity herobrine : nearbyEntities) {
+            PLAYER_TRACKER.observe(level, herobrine);
             if (state.isPermanentlyDefeated()) {
                 herobrine.discard();
                 continue;
@@ -136,11 +139,22 @@ public final class HerobrineManager {
     }
 
     private static void handleChatMention(PlayerChatMessage message, ServerPlayer sender) {
-        if (!containsPublicMention(message.signedContent())) {
-            return;
-        }
+        String text = message.signedContent();
+        CHAT_MEMORY.add(new HerobrineChatMemory.Message(
+                sender.getUUID(),
+                sender.getName().getString(),
+                text,
+                sender.level().getGameTime()
+        ));
 
-        activateStage3FromMention(sender);
+        if (containsPublicMention(text)) {
+            HerobrineMod.LOGGER.info(
+                    "Hero AI trigger detected from {}: explicit Hero/Herobrine mention",
+                    sender.getGameProfile().name()
+            );
+            // The future AI adapter consumes this trigger. A chat mention
+            // alone must never force a Stage 3 transformation.
+        }
     }
 
     private static boolean containsPublicMention(String text) {
@@ -159,29 +173,12 @@ public final class HerobrineManager {
         return false;
     }
 
-    private static void activateStage3FromMention(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
+    public static List<HerobrineChatMemory.Message> recentChat() {
+        return CHAT_MEMORY.recent();
+    }
 
-        HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
-        if (state.isPermanentlyDefeated()) {
-            return;
-        }
-
-        HerobrineEntity herobrine = findNearest(level, player, TRACK_RANGE);
-
-        if (herobrine == null) {
-            herobrine = spawnStage3(level, player);
-        } else {
-            herobrine.setStage(HerobrineStage.STAGE_3);
-            herobrine.markStage3Activated(level.getGameTime() / 24000L);
-            moveBehindPlayer(level, herobrine, player, true);
-        }
-
-        if (herobrine != null) {
-            herobrine.setTarget(player);
-        }
+    public static List<HerobrinePlayerTracker.Snapshot> trackedPlayers() {
+        return PLAYER_TRACKER.snapshots();
     }
 
     private static HerobrineEntity spawnStage1(ServerLevel level) {
