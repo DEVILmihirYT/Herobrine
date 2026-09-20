@@ -12,11 +12,14 @@ public record HerobrineAiRequest(
         HerobrineStage stage,
         String trigger,
         List<HerobrineChatMemory.Message> recentChat,
-        List<HerobrinePlayerTracker.Snapshot> trackedPlayers
+        List<HerobrinePlayerTracker.Snapshot> trackedPlayers,
+        List<String> playerMemories,
+        int relationship
 ) {
     public HerobrineAiRequest {
         recentChat = List.copyOf(recentChat);
         trackedPlayers = List.copyOf(trackedPlayers);
+        playerMemories = List.copyOf(playerMemories);
     }
 
     /**
