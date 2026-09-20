@@ -14,12 +14,22 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 public final class HerobrineWorldState extends SavedData {
-    public record PlayerState(String uuid, boolean grudgeActive, long revengeUntilDay) {
+    public record PlayerState(
+            String uuid,
+            boolean grudgeActive,
+            long revengeUntilDay,
+            List<String> memories,
+            int relationship,
+            long lastInteractionDay
+    ) {
         private static final Codec<PlayerState> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
                         Codec.STRING.fieldOf("uuid").forGetter(PlayerState::uuid),
                         Codec.BOOL.fieldOf("grudgeActive").forGetter(PlayerState::grudgeActive),
-                        Codec.LONG.fieldOf("revengeUntilDay").forGetter(PlayerState::revengeUntilDay)
+                        Codec.LONG.fieldOf("revengeUntilDay").forGetter(PlayerState::revengeUntilDay),
+                        Codec.STRING.listOf().optionalFieldOf("memories", List.of()).forGetter(PlayerState::memories),
+                        Codec.INT.optionalFieldOf("relationship", 0).forGetter(PlayerState::relationship),
+                        Codec.LONG.optionalFieldOf("lastInteractionDay", -1L).forGetter(PlayerState::lastInteractionDay)
                 ).apply(instance, PlayerState::new)
         );
     }
@@ -153,7 +163,15 @@ public final class HerobrineWorldState extends SavedData {
     public void setGrudgeActive(UUID playerId, boolean active) {
         PlayerState existing = findPlayer(playerId);
         long revengeUntilDay = existing == null ? -1L : existing.revengeUntilDay();
-        upsertPlayer(new PlayerState(playerId.toString(), active, revengeUntilDay));
+        PlayerState state = findPlayer(playerId);
+        upsertPlayer(new PlayerState(
+                playerId.toString(),
+                active,
+                revengeUntilDay,
+                state == null ? List.of() : state.memories(),
+                state == null ? 0 : state.relationship(),
+                state == null ? -1L : state.lastInteractionDay()
+        ));
     }
 
     public long getRevengeUntilDay(UUID playerId) {
@@ -164,7 +182,55 @@ public final class HerobrineWorldState extends SavedData {
     public void setRevengeUntilDay(UUID playerId, long day) {
         PlayerState existing = findPlayer(playerId);
         boolean grudgeActive = existing != null && existing.grudgeActive();
-        upsertPlayer(new PlayerState(playerId.toString(), grudgeActive, day));
+        upsertPlayer(new PlayerState(
+                playerId.toString(),
+                grudgeActive,
+                day,
+                existing == null ? List.of() : existing.memories(),
+                existing == null ? 0 : existing.relationship(),
+                existing == null ? -1L : existing.lastInteractionDay()
+        ));
+    }
+
+    public List<String> getAiMemories(UUID playerId) {
+        PlayerState state = findPlayer(playerId);
+        return state == null ? List.of() : state.memories();
+    }
+
+    public int getRelationship(UUID playerId) {
+        PlayerState state = findPlayer(playerId);
+        return state == null ? 0 : state.relationship();
+    }
+
+    public void recordAiMemory(UUID playerId, String memory, int relationshipDelta, long currentDay) {
+        if (memory == null || memory.isBlank()) {
+            return;
+        }
+
+        PlayerState existing = findPlayer(playerId);
+        List<String> memories = new ArrayList<>(existing == null ? List.of() : existing.memories());
+        String compact = memory.trim();
+        if (compact.length() > 240) {
+            compact = compact.substring(0, 240);
+        }
+        memories.add(compact);
+        while (memories.size() > 8) {
+            memories.remove(0);
+        }
+
+        int oldRelationship = existing == null ? 0 : existing.relationship();
+        int nextRelationship = Math.max(-100, Math.min(100, oldRelationship + relationshipDelta));
+        boolean grudgeActive = existing != null && existing.grudgeActive();
+        long revengeUntilDay = existing == null ? -1L : existing.revengeUntilDay();
+
+        upsertPlayer(new PlayerState(
+                playerId.toString(),
+                grudgeActive,
+                revengeUntilDay,
+                memories,
+                nextRelationship,
+                currentDay
+        ));
     }
 
     public void clearPlayerState(UUID playerId) {
