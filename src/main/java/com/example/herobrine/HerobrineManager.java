@@ -3,6 +3,7 @@ package com.example.herobrine;
 import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
+import com.example.herobrine.ai.HerobrineAiCoordinator;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public final class HerobrineManager {
     private static final double TRACK_RANGE = 100.0D;
     private static final HerobrinePlayerTracker PLAYER_TRACKER = new HerobrinePlayerTracker();
     private static final HerobrineChatMemory CHAT_MEMORY = new HerobrineChatMemory();
+    private static final HerobrineAiCoordinator AI_COORDINATOR = new HerobrineAiCoordinator();
 
     private HerobrineManager() {
     }
@@ -152,8 +154,13 @@ public final class HerobrineManager {
                     "Hero AI trigger detected from {}: explicit Hero/Herobrine mention",
                     sender.getGameProfile().name()
             );
-            // The future AI adapter consumes this trigger. A chat mention
-            // alone must never force a Stage 3 transformation.
+
+            if (sender.level() instanceof ServerLevel level) {
+                HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
+                if (hero != null) {
+                    AI_COORDINATOR.requestFromMention(level, hero, sender);
+                }
+            }
         }
     }
 
