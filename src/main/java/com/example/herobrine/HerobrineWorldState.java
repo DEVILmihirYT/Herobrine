@@ -161,9 +161,8 @@ public final class HerobrineWorldState extends SavedData {
     }
 
     public void setGrudgeActive(UUID playerId, boolean active) {
-        PlayerState existing = findPlayer(playerId);
-        long revengeUntilDay = existing == null ? -1L : existing.revengeUntilDay();
         PlayerState state = findPlayer(playerId);
+        long revengeUntilDay = state == null ? -1L : state.revengeUntilDay();
         upsertPlayer(new PlayerState(
                 playerId.toString(),
                 active,
