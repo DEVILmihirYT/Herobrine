@@ -95,14 +95,12 @@ public final class HerobrineManager {
         }
 
         HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
-        if (state.hasStarterKit(player.getUUID())) {
+        if (state.isStarterKitGiven()) {
             return;
         }
 
         giveExactHerobrineStarterKit(player);
-        BlockPos altarCenter = buildStarterAltar(level, player);
-        spawnStage1FromAltar(level, altarCenter);
-        state.markStarterKitGiven(player.getUUID());
+        state.markStarterKitGiven();
 
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "Something is watching... the netherrack is beginning to awaken."
@@ -121,48 +119,6 @@ public final class HerobrineManager {
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
         }
-    }
-
-    private static BlockPos buildStarterAltar(ServerLevel level, ServerPlayer player) {
-        BlockPos base = player.blockPosition().below();
-        BlockPos center = base.above();
-        BlockPos[] gold = {
-                center.north(), center.south(), center.east(), center.west(),
-                center.north().east(), center.north().west(),
-                center.south().east(), center.south().west()
-        };
-
-        level.setBlock(center, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3);
-        for (BlockPos pos : gold) {
-            level.setBlock(pos, Blocks.GOLD_BLOCK.defaultBlockState(), 3);
-        }
-
-        BlockPos netherrack = center.above();
-        level.setBlock(netherrack, Blocks.NETHERRACK.defaultBlockState(), 3);
-
-        level.setBlock(center.north().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
-        level.setBlock(center.south().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
-        level.setBlock(center.east().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
-        level.setBlock(center.west().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
-
-        level.setBlock(netherrack.above(), Blocks.FIRE.defaultBlockState(), 3);
-        return netherrack;
-    }
-
-    private static void spawnStage1FromAltar(ServerLevel level, BlockPos netherrack) {
-        HerobrineEntity entity = ModEntityTypes.HEROBRINE.spawn(
-                level,
-                netherrack.above(),
-                EntitySpawnReason.TRIGGERED
-        );
-
-        if (entity == null) {
-            return;
-        }
-
-        entity.setStage(HerobrineStage.STAGE_1);
-        equipStandardLoadout(entity);
-        entity.beginStage1SpawnAnimation(netherrack);
     }
 
     private static List<HerobrineEntity> collectNearbyHerobrines(ServerLevel level) {
