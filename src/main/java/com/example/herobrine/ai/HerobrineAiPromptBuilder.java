@@ -30,6 +30,10 @@ public final class HerobrineAiPromptBuilder {
         out.append("\nRELEVANT PLAYER SNAPSHOTS:\n");
         appendPlayers(out, request.trackedPlayers());
 
+        out.append("\nPERSISTENT PLAYER MEMORY:\n");
+        out.append("relationship=").append(request.relationship()).append("/100\n");
+        appendMemories(out, request.playerMemories());
+
         out.append("\nRECENT LOCAL CHAT (bounded):\n");
         appendChat(out, request.recentChat());
 
@@ -64,6 +68,17 @@ public final class HerobrineAiPromptBuilder {
                     .append(" creative=").append(player.creative())
                     .append(" operator=").append(player.operator())
                     .append('\n');
+        }
+    }
+
+    private static void appendMemories(StringBuilder out, List<String> memories) {
+        if (memories.isEmpty()) {
+            out.append("(none)\\n");
+            return;
+        }
+
+        for (String memory : memories) {
+            out.append("- ").append(memory).append('\\n');
         }
     }
 
