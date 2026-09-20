@@ -17,7 +17,7 @@ public final class GrudgeManager {
         HerobrineWorldState state = HerobrineWorldState.get(server);
         long currentDay = player.level().getGameTime() / 24000L;
         long duration = MIN_REVENGE_DAYS
-                + player.level().getRandom().nextLong(MAX_REVENGE_DAYS - MIN_REVENGE_DAYS + 1L);
+                + player.level().getRandom().nextInt((int) (MAX_REVENGE_DAYS - MIN_REVENGE_DAYS + 1L));
 
         state.setGrudgeActive(player.getUUID(), true);
         state.setRevengeUntilDay(player.getUUID(), currentDay + duration);
