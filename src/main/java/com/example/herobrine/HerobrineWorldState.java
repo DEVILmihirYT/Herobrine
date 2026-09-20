@@ -34,8 +34,8 @@ public final class HerobrineWorldState extends SavedData {
                             .forGetter(HerobrineWorldState::isStage2Unlocked),
                     Codec.BOOL.optionalFieldOf("permanentlyDefeated", false)
                             .forGetter(HerobrineWorldState::isPermanentlyDefeated),
-                    Codec.STRING.listOf().optionalFieldOf("starterPlayers", List.of())
-                            .forGetter(HerobrineWorldState::getStarterPlayers),
+                    Codec.BOOL.optionalFieldOf("starterKitGiven", false)
+                            .forGetter(HerobrineWorldState::isStarterKitGiven),
                     PlayerState.CODEC.listOf().optionalFieldOf("players", List.of())
                             .forGetter(HerobrineWorldState::getPlayers)
             ).apply(instance, HerobrineWorldState::new)
@@ -52,11 +52,11 @@ public final class HerobrineWorldState extends SavedData {
     private long stage2Day;
     private boolean stage2Unlocked;
     private boolean permanentlyDefeated;
-    private final List<String> starterPlayers;
+    private boolean starterKitGiven;
     private final List<PlayerState> players;
 
     public HerobrineWorldState() {
-        this(-1L, -1L, false, false, List.of(), List.of());
+        this(-1L, -1L, false, false, false, List.of());
     }
 
     private HerobrineWorldState(
@@ -64,14 +64,14 @@ public final class HerobrineWorldState extends SavedData {
             long stage2Day,
             boolean stage2Unlocked,
             boolean permanentlyDefeated,
-            List<String> starterPlayers,
+            boolean starterKitGiven,
             List<PlayerState> players
     ) {
         this.lifecycleStartDay = lifecycleStartDay;
         this.stage2Day = stage2Day;
         this.stage2Unlocked = stage2Unlocked;
         this.permanentlyDefeated = permanentlyDefeated;
-        this.starterPlayers = new ArrayList<>(starterPlayers);
+        this.starterKitGiven = starterKitGiven;
         this.players = new ArrayList<>(players);
     }
 
@@ -132,20 +132,16 @@ public final class HerobrineWorldState extends SavedData {
     }
 
 
-    public List<String> getStarterPlayers() {
-        return List.copyOf(starterPlayers);
+    public boolean isStarterKitGiven() {
+        return starterKitGiven;
     }
 
-    public boolean hasStarterKit(UUID playerId) {
-        return starterPlayers.contains(playerId.toString());
-    }
-
-    public void markStarterKitGiven(UUID playerId) {
-        String id = playerId.toString();
-        if (starterPlayers.contains(id)) {
+    public void markStarterKitGiven() {
+        if (starterKitGiven) {
             return;
         }
-        starterPlayers.add(id);
+
+        starterKitGiven = true;
         setDirty();
     }
 
