@@ -4,11 +4,13 @@ import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +24,6 @@ import net.minecraft.world.phys.Vec3;
 
 public final class HerobrineManager {
     private static final double TRACK_RANGE = 100.0D;
-    private static final int NIGHT_SPAWN_CHECK_INTERVAL = 200;
 
     private HerobrineManager() {
     }
@@ -32,6 +33,7 @@ public final class HerobrineManager {
         ServerMessageEvents.CHAT_MESSAGE.register(
                 (message, sender, chatType) -> handleChatMention(message, sender)
         );
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> handleFirstJoin(sender));
         HerobrineMod.LOGGER.info("Herobrine manager initialized");
     }
 
@@ -82,16 +84,85 @@ public final class HerobrineManager {
             return;
         }
 
-        // Lightweight Stage 1 appearance chance during nighttime in the overworld.
-        if (level.dimension() == ServerLevel.OVERWORLD
-                && !state.isStage2Unlocked()
-                && nearbyEntities.isEmpty()
-                && isNight(level)
-                && level.getGameTime() % NIGHT_SPAWN_CHECK_INTERVAL == 0L
-                && !level.players().isEmpty()
-                && level.getRandom().nextInt(8) == 0) {
-            spawnStage1(level);
+
+    }
+
+
+    private static void handleFirstJoin(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)
+                || level.dimension() != ServerLevel.OVERWORLD) {
+            return;
         }
+
+        HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
+        if (state.hasStarterKit(player.getUUID())) {
+            return;
+        }
+
+        giveExactHerobrineStarterKit(player);
+        BlockPos altarCenter = buildStarterAltar(level, player);
+        spawnStage1FromAltar(level, altarCenter);
+        state.markStarterKitGiven(player.getUUID());
+
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "Something is watching... the netherrack is beginning to awaken."
+        ));
+    }
+
+    private static void giveExactHerobrineStarterKit(ServerPlayer player) {
+        give(player, new ItemStack(Items.GOLD_BLOCK, 8));
+        give(player, new ItemStack(Items.MOSSY_COBBLESTONE, 1));
+        give(player, new ItemStack(Items.NETHERRACK, 1));
+        give(player, new ItemStack(Items.REDSTONE_TORCH, 4));
+        give(player, new ItemStack(Items.FLINT_AND_STEEL, 1));
+    }
+
+    private static void give(ServerPlayer player, ItemStack stack) {
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
+        }
+    }
+
+    private static BlockPos buildStarterAltar(ServerLevel level, ServerPlayer player) {
+        BlockPos base = player.blockPosition().below();
+        BlockPos center = base.above();
+        BlockPos[] gold = {
+                center.north(), center.south(), center.east(), center.west(),
+                center.north().east(), center.north().west(),
+                center.south().east(), center.south().west()
+        };
+
+        level.setBlock(center, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3);
+        for (BlockPos pos : gold) {
+            level.setBlock(pos, Blocks.GOLD_BLOCK.defaultBlockState(), 3);
+        }
+
+        BlockPos netherrack = center.above();
+        level.setBlock(netherrack, Blocks.NETHERRACK.defaultBlockState(), 3);
+
+        level.setBlock(center.north().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
+        level.setBlock(center.south().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
+        level.setBlock(center.east().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
+        level.setBlock(center.west().above(), Blocks.REDSTONE_TORCH.defaultBlockState(), 3);
+
+        level.setBlock(netherrack.above(), Blocks.FIRE.defaultBlockState(), 3);
+        return netherrack;
+    }
+
+    private static void spawnStage1FromAltar(ServerLevel level, BlockPos netherrack) {
+        HerobrineEntity entity = ModEntityTypes.HEROBRINE.spawn(
+                level,
+                netherrack.above(),
+                EntitySpawnReason.TRIGGERED
+        );
+
+        if (entity == null) {
+            return;
+        }
+
+        entity.setStage(HerobrineStage.STAGE_1);
+        equipStandardLoadout(entity);
+        entity.beginStage1SpawnAnimation(netherrack);
     }
 
     private static List<HerobrineEntity> collectNearbyHerobrines(ServerLevel level) {
