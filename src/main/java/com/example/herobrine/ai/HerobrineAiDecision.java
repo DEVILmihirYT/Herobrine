@@ -8,13 +8,15 @@ public record HerobrineAiDecision(
         String speech,
         UUID targetPlayer,
         String itemId,
-        int itemCount
+        int itemCount,
+        String memoryNote,
+        int relationshipDelta
 ) {
     public static HerobrineAiDecision speak(String speech) {
-        return new HerobrineAiDecision(HerobrineAction.SPEAK, speech, null, null, 0);
+        return new HerobrineAiDecision(HerobrineAction.SPEAK, speech, null, null, 0, null, 0);
     }
 
     public static HerobrineAiDecision doNothing() {
-        return new HerobrineAiDecision(HerobrineAction.OBSERVE, null, null, null, 0);
+        return new HerobrineAiDecision(HerobrineAction.OBSERVE, null, null, null, 0, null, 0);
     }
 }
