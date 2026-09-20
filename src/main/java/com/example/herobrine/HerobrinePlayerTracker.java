@@ -1,5 +1,6 @@
 package com.example.herobrine;
 
+import com.example.herobrine.entity.HerobrineEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -36,11 +37,11 @@ public final class HerobrinePlayerTracker {
 
     private final Map<UUID, Snapshot> snapshots = new LinkedHashMap<>();
 
-    public void observe(ServerLevel level, HerobrineEntityView hero) {
+    public void observe(ServerLevel level, HerobrineEntity hero) {
         List<ServerPlayer> players = new ArrayList<>(level.players());
 
         for (ServerPlayer player : players) {
-            double distance = hero.distanceToSqr(player);
+            double distance = Math.sqrt(hero.distanceToSqr(player));
             snapshots.put(
                     player.getUUID(),
                     new Snapshot(
@@ -50,7 +51,7 @@ public final class HerobrinePlayerTracker {
                             player.getX(),
                             player.getY(),
                             player.getZ(),
-                            Math.sqrt(distance),
+                            distance,
                             player.isAlive(),
                             player.gameMode().isCreative(),
                             player.permissions().hasPermission(
@@ -83,13 +84,5 @@ public final class HerobrinePlayerTracker {
             UUID oldest = snapshots.keySet().iterator().next();
             snapshots.remove(oldest);
         }
-    }
-
-    /**
-     * Minimal abstraction keeps the tracker independent from the concrete
-     * entity implementation and makes future AI context tests easier.
-     */
-    public interface HerobrineEntityView {
-        double distanceToSqr(ServerPlayer player);
     }
 }
