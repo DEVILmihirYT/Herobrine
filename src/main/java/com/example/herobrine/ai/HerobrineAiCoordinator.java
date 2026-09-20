@@ -62,13 +62,17 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             return;
         }
 
+        com.example.herobrine.HerobrineWorldState worldState =
+                com.example.herobrine.HerobrineWorldState.get(level.getServer());
         HerobrineAiRequest request = new HerobrineAiRequest(
                 player.getUUID(),
                 player.getName().getString(),
                 hero.getStage(),
                 "explicit_hero_mention",
                 HerobrineManager.recentChat(),
-                HerobrineManager.trackedPlayers()
+                HerobrineManager.trackedPlayers(),
+                worldState.getAiMemories(player.getUUID()),
+                worldState.getRelationship(player.getUUID())
         );
 
         HerobrineAiProvider primary = primaryProvider;
@@ -171,6 +175,15 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             );
 
             executeDecision(level, hero, player, decision);
+
+            if (decision.memoryNote() != null && !decision.memoryNote().isBlank()) {
+                worldState.recordAiMemory(
+                        player.getUUID(),
+                        decision.memoryNote(),
+                        Math.max(-10, Math.min(10, decision.relationshipDelta())),
+                        level.getGameTime() / 24000L
+                );
+            }
         });
     }
 
