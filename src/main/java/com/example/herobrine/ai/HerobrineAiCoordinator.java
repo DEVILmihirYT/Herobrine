@@ -8,6 +8,8 @@ import com.example.herobrine.HerobrinePlayerTracker;
 import com.example.herobrine.HerobrineStage;
 import com.example.herobrine.entity.HerobrineEntity;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,6 +25,8 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public final class HerobrineAiCoordinator implements AutoCloseable {
     private static final int QUEUE_WORKERS = 2;
+    private static final int MAX_PENDING_REQUESTS = 8;
+    private static final long MENTION_COOLDOWN_TICKS = 100L;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(
             QUEUE_WORKERS,
@@ -36,6 +40,9 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
     private volatile HerobrineAiProvider primaryProvider;
     private volatile HerobrineAiProvider fallbackProvider;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicInteger pendingRequests =
+            new java.util.concurrent.atomic.AtomicInteger();
+    private final Map<UUID, Long> lastMentionTick = new ConcurrentHashMap<>();
 
     public void setProviders(HerobrineAiProvider primary, HerobrineAiProvider fallback) {
         this.primaryProvider = primary;
@@ -71,6 +78,20 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             return;
         }
 
+        long now = level.getGameTime();
+        Long last = lastMentionTick.get(player.getUUID());
+        if (last != null && now - last < MENTION_COOLDOWN_TICKS) {
+            HerobrineMod.LOGGER.debug("Ignoring repeated AI mention from {} during cooldown", player.getGameProfile().name());
+            return;
+        }
+
+        if (pendingRequests.get() >= MAX_PENDING_REQUESTS) {
+            HerobrineMod.LOGGER.debug("Herobrine AI request queue is full; ignoring trigger from {}", player.getGameProfile().name());
+            return;
+        }
+
+        lastMentionTick.put(player.getUUID(), now);
+        pendingRequests.incrementAndGet();
         CompletableFuture<HerobrineAiDecision> future = submit(primary, request);
         if (fallback != null) {
             future = future.handle((decision, error) -> {
@@ -82,7 +103,13 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         }
 
         future.whenCompleteAsync(
-                (decision, error) -> handleResult(level, hero, player, request, decision, error),
+                (decision, error) -> {
+                    try {
+                        handleResult(level, hero, player, request, decision, error);
+                    } finally {
+                        pendingRequests.decrementAndGet();
+                    }
+                },
                 executor
         );
     }
@@ -196,6 +223,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             executor.shutdownNow();
+            lastMentionTick.clear();
         }
     }
 }
