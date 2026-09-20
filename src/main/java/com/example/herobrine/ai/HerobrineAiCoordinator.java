@@ -16,6 +16,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 /**
  * Provider-neutral asynchronous AI boundary.
@@ -170,11 +173,81 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                     decision.action()
             );
 
-            // The existing HerobrineActionExecutor is the only place where
-            // concrete game actions should be executed. Provider-specific
-            // response parsing will be added when the real AI provider is
-            // connected.
+            executeDecision(level, hero, player, decision);
         });
+    }
+
+    private static void executeDecision(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player,
+            HerobrineAiDecision decision
+    ) {
+        switch (decision.action()) {
+            case SPEAK -> {
+                if (decision.speech() != null && !decision.speech().isBlank()) {
+                    player.sendSystemMessage(Component.literal(decision.speech()));
+                }
+            }
+            case OBSERVE -> {
+                // Observation intentionally has no visible side effect.
+            }
+            case DESPAWN -> hero.discard();
+            case ATTACK_PLAYER -> {
+                ServerPlayer target = findPlayer(level, decision.targetPlayer());
+                if (target != null) {
+                    HerobrineActionExecutor.attackPlayer(hero, target);
+                }
+            }
+            case GIVE_ITEM -> {
+                Item item = resolveGift(decision.itemId());
+                if (item != null) {
+                    HerobrineActionExecutor.giveItem(
+                            hero,
+                            player,
+                            item,
+                            Math.max(1, decision.itemCount())
+                    );
+                }
+            }
+            default -> HerobrineMod.LOGGER.debug(
+                    "AI action {} is validated but has no executor adapter yet",
+                    decision.action()
+            );
+        }
+    }
+
+    private static ServerPlayer findPlayer(ServerLevel level, UUID playerId) {
+        if (playerId == null) {
+            return null;
+        }
+        return level.getServer().getPlayerList().getPlayer(playerId);
+    }
+
+    private static Item resolveGift(String itemId) {
+        if (itemId == null) {
+            return null;
+        }
+
+        String id = itemId.toLowerCase(java.util.Locale.ROOT);
+        if (id.startsWith("minecraft:")) {
+            id = id.substring("minecraft:".length());
+        }
+
+        return switch (id) {
+            case "torch" -> Items.TORCH;
+            case "golden_apple" -> Items.GOLDEN_APPLE;
+            case "cooked_beef" -> Items.COOKED_BEEF;
+            case "stone_pickaxe" -> Items.STONE_PICKAXE;
+            case "stone_axe" -> Items.STONE_AXE;
+            case "stone_shovel" -> Items.STONE_SHOVEL;
+            case "stone_hoe" -> Items.STONE_HOE;
+            case "leather_helmet" -> Items.LEATHER_HELMET;
+            case "leather_chestplate" -> Items.LEATHER_CHESTPLATE;
+            case "leather_leggings" -> Items.LEATHER_LEGGINGS;
+            case "leather_boots" -> Items.LEATHER_BOOTS;
+            default -> null;
+        };
     }
 
     private static boolean isCurrentServerStateValid(
