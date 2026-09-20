@@ -47,7 +47,7 @@ public final class HerobrinePlayerTracker {
                     new Snapshot(
                             player.getUUID(),
                             player.getName().getString(),
-                            level.dimension().location().toString(),
+                            level.dimension().identifier().toString(),
                             player.getX(),
                             player.getY(),
                             player.getZ(),
