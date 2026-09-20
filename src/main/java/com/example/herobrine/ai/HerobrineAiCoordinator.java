@@ -148,10 +148,6 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             return;
         }
 
-        if (!isCurrentServerStateValid(hero, player, request.stage())) {
-            return;
-        }
-
         if (!isActionAllowed(request.stage(), decision.action())) {
             HerobrineMod.LOGGER.warn(
                     "Rejected AI action {} for stage {}",
