@@ -6,8 +6,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class GrudgeManager {
-    private static final long MIN_REVENGE_DAYS = 4L;
-    private static final long MAX_REVENGE_DAYS = 5L;
+    private static final long MIN_REVENGE_DAYS = 2L;
+    private static final long MAX_REVENGE_DAYS = 4L;
 
     private GrudgeManager() {
     }
