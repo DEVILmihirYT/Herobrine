@@ -3,7 +3,7 @@ package com.example.herobrine;
 import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
-import com.example.herobrine.item.ModItems;
+import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -69,10 +69,6 @@ public final class HerobrineManager {
 
             if (state.isStage2Unlocked() && herobrine.getStage() == HerobrineStage.STAGE_1) {
                 herobrine.setStage(HerobrineStage.STAGE_2);
-            }
-
-            if (herobrine.getStage() == HerobrineStage.STAGE_2) {
-                HerobrineStageTwoBehavior.tick(level, herobrine);
             }
 
             for (ServerPlayer player : level.players()) {
@@ -179,14 +175,21 @@ public final class HerobrineManager {
             );
 
             if (entity.getStage() == HerobrineStage.STAGE_1) {
-                entity.setItemSlot(
-                        EquipmentSlot.MAINHAND,
-                        new ItemStack(ModItems.MASHAAL)
-                );
+                equipStandardLoadout(entity);
+                entity.beginStage1SpawnAnimation(spawnPos);
             }
         }
 
         return entity;
+    }
+
+    private static void equipStandardLoadout(HerobrineEntity entity) {
+        entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
+        entity.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+        entity.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        entity.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
+        entity.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.LEATHER_LEGGINGS));
+        entity.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.LEATHER_BOOTS));
     }
 
     private static HerobrineEntity spawnStage3(ServerLevel level, ServerPlayer player) {
