@@ -170,9 +170,25 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         }
 
         return switch (stage) {
-            case STAGE_1 -> action != HerobrineAction.ATTACK_PLAYER;
-            case STAGE_2 -> action != HerobrineAction.ATTACK_PLAYER;
-            case STAGE_3 -> true;
+            case STAGE_1 -> switch (action) {
+                case SPEAK, OBSERVE, APPROACH, FOLLOW, HIDE, RETREAT,
+                        GIVE_ITEM, ATTACK_HOSTILE, TELEPORT_BEHIND,
+                        DESPAWN, TRIGGER_ENCOUNTER -> true;
+                default -> false;
+            };
+            case STAGE_2 -> switch (action) {
+                case SPEAK, OBSERVE, APPROACH, FOLLOW, HIDE, RETREAT,
+                        GIVE_ITEM, ATTACK_HOSTILE, STEAL_LOOT, BURN_DROP,
+                        BREAK_BLOCK, TELEPORT_BEHIND, DESPAWN,
+                        TRIGGER_ENCOUNTER -> true;
+                default -> false;
+            };
+            case STAGE_3 -> switch (action) {
+                case SPEAK, OBSERVE, APPROACH, FOLLOW, HIDE, RETREAT,
+                        ATTACK_PLAYER, TELEPORT_BEHIND, DESPAWN,
+                        TRIGGER_ENCOUNTER -> true;
+                default -> false;
+            };
         };
     }
 
