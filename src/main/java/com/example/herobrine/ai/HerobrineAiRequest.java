@@ -18,4 +18,18 @@ public record HerobrineAiRequest(
         recentChat = List.copyOf(recentChat);
         trackedPlayers = List.copyOf(trackedPlayers);
     }
+
+    /**
+     * Provider-ready system instruction generated from the current stage.
+     */
+    public String systemPrompt() {
+        return HerobrineAiPromptBuilder.systemPrompt(stage);
+    }
+
+    /**
+     * Provider-ready compact context generated from local Minecraft state.
+     */
+    public String context() {
+        return HerobrineAiPromptBuilder.context(this);
+    }
 }
