@@ -5,6 +5,7 @@ import com.example.herobrine.HerobrineAction;
 import com.example.herobrine.HerobrineActionExecutor;
 import com.example.herobrine.HerobrineChatMemory;
 import com.example.herobrine.HerobrineManager;
+import com.example.herobrine.GrudgeManager;
 import com.example.herobrine.HerobrinePlayerTracker;
 import com.example.herobrine.HerobrineStage;
 import com.example.herobrine.entity.HerobrineEntity;
@@ -222,8 +223,8 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             case DESPAWN -> hero.discard();
             case ATTACK_PLAYER -> {
                 ServerPlayer target = findPlayer(level, decision.targetPlayer());
-                if (target != null) {
-                    HerobrineActionExecutor.attackPlayer(hero, target);
+                if (target != null && HerobrineActionExecutor.attackPlayer(hero, target)) {
+                    GrudgeManager.activateGrudge(target);
                 }
             }
             case GIVE_ITEM -> {
