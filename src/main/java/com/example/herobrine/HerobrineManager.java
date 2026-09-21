@@ -4,6 +4,8 @@ import com.example.HerobrineMod;
 import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.entity.ModEntityTypes;
 import com.example.herobrine.ai.HerobrineAiCoordinator;
+import com.example.herobrine.ai.GeminiHerobrineAiProvider;
+import com.example.herobrine.ai.GroqHerobrineAiProvider;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import java.util.ArrayList;
