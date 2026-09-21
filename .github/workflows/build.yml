@@ -38,3 +38,27 @@ jobs:
           name: herobrineai-build
           path: build/libs/*.jar
           if-no-files-found: error
+
+      - name: Optional AI provider smoke test
+        if: ${{ secrets.GROQ_API_KEY != '' || secrets.GEMINI_CHAT_API_KEY != '' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_CHAT_API_KEY: ${{ secrets.GEMINI_CHAT_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GROQ_API_KEY:-}" ]; then
+            status=$(curl -sS -o /dev/null -w "%{http_code}" \
+              -H "Authorization: Bearer $GROQ_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"Return exactly JSON with ok true."}],"response_format":{"type":"json_object"},"max_completion_tokens":20}' \
+              https://api.groq.com/openai/v1/chat/completions)
+            test "$status" = "200"
+          fi
+          if [ -n "${GEMINI_CHAT_API_KEY:-}" ]; then
+            status=$(curl -sS -o /dev/null -w "%{http_code}" \
+              -H "x-goog-api-key: $GEMINI_CHAT_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"contents":[{"parts":[{"text":"Return exactly JSON with ok true."}]}],"generationConfig":{"responseMimeType":"application/json"}}' \
+              "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent")
+            test "$status" = "200"
+          fi
