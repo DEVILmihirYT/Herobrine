@@ -11,8 +11,17 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 
 public final class ModItems {
+    public static final Item MASHAAL = register(
+            "mashaal",
+            MashaalItem::new,
+            new Item.Properties().stacksTo(1)
+    );
+
     public static void registerModItems() {
-        HerobrineMod.LOGGER.info("Registering Herobrine items");
+        CreativeModeTabEvents.modifyOutputEvent(net.minecraft.world.item.CreativeModeTabs.TOOLS_AND_UTILITIES)
+                .register(output -> output.accept(MASHAAL));
+
+        HerobrineMod.LOGGER.info("Registering Herobrine Mashaal");
     }
 
     private static <T extends Item> T register(
