@@ -35,6 +35,12 @@ public final class HerobrineManager {
     }
 
     public static void initialize() {
+        AI_COORDINATOR.setProviders(
+                new GroqHerobrineAiProvider("openai/gpt-oss-120b"),
+                new GroqHerobrineAiProvider("openai/gpt-oss-20b"),
+                new GeminiHerobrineAiProvider()
+        );
+
         ServerTickEvents.END_LEVEL_TICK.register(HerobrineManager::tickLevel);
         ServerMessageEvents.CHAT_MESSAGE.register(
                 (message, sender, chatType) -> handleChatMention(message, sender)
