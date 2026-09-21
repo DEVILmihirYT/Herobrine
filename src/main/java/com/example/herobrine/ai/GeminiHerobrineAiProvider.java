@@ -67,6 +67,7 @@ public final class GeminiHerobrineAiProvider implements HerobrineAiProvider {
 
         JsonObject generationConfig = new JsonObject();
         generationConfig.addProperty("responseMimeType", "application/json");
+        generationConfig.add("responseSchema", decisionSchema());
         root.add("generationConfig", generationConfig);
 
         URI endpoint = URI.create(
@@ -90,6 +91,59 @@ public final class GeminiHerobrineAiProvider implements HerobrineAiProvider {
                     }
                     return parseDecision(response.body());
                 });
+    }
+
+    private static JsonObject decisionSchema() {
+        JsonObject schema = new JsonObject();
+        schema.addProperty("type", "object");
+
+        JsonObject properties = new JsonObject();
+        properties.add("action", enumSchema());
+        properties.add("speech", nullableString());
+        properties.add("targetPlayer", nullableString());
+        properties.add("itemId", nullableString());
+        properties.add("itemCount", numberSchema());
+        properties.add("memoryNote", nullableString());
+        properties.add("relationshipDelta", numberSchema());
+        schema.add("properties", properties);
+
+        JsonArray required = new JsonArray();
+        required.add("action");
+        required.add("speech");
+        required.add("targetPlayer");
+        required.add("itemId");
+        required.add("itemCount");
+        required.add("memoryNote");
+        required.add("relationshipDelta");
+        schema.add("required", required);
+        schema.addProperty("additionalProperties", false);
+        return schema;
+    }
+
+    private static JsonObject enumSchema() {
+        JsonObject object = new JsonObject();
+        object.addProperty("type", "string");
+        JsonArray values = new JsonArray();
+        for (HerobrineAction action : HerobrineAction.values()) {
+            values.add(action.name());
+        }
+        object.add("enum", values);
+        return object;
+    }
+
+    private static JsonObject nullableString() {
+        JsonObject object = new JsonObject();
+        JsonArray types = new JsonArray();
+        types.add("string");
+        types.add("null");
+        object.add("type", types);
+        return object;
+    }
+
+    private static JsonObject numberSchema() {
+        JsonObject object = new JsonObject();
+        object.addProperty("type", "integer");
+        return object;
     }
 
     private static HerobrineAiDecision parseDecision(String responseBody) {
