@@ -115,6 +115,10 @@ public final class HerobrineManager {
         giveExactHerobrineStarterKit(player);
         state.markStarterKitGiven();
 
+        if (!state.isPermanentlyDefeated() && collectNearbyHerobrines(level).isEmpty()) {
+            spawnStage1(level);
+        }
+
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "Something is watching... the netherrack is beginning to awaken."
         ));
