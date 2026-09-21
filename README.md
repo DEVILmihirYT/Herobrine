@@ -17,7 +17,7 @@ Planned systems include multiplayer-aware player tracking, local chat context, a
 - Minecraft Java **26.1+**
 - **Fabric** only
 - Java **25**
-- Designed for development on **Android + Termux**
+- Developed and maintained through **GitHub + Superpowers/GitHub workflows**
 - Server-authoritative gameplay
 - Asynchronous AI/network work; never block the Minecraft main thread
 - Bounded queues and efficient player-range tracking
@@ -30,4 +30,4 @@ Planned systems include multiplayer-aware player tracking, local chat context, a
 
 ## Status
 
-Early development. The repository is intentionally being built in small, testable phases so every subsystem can be verified before the next one is added.
+Active development. The repository is built in small, testable phases; every subsystem is expected to pass GitHub Actions verification before it is treated as complete. The repository is intentionally being built in small, testable phases so every subsystem can be verified before the next one is added.
