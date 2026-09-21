@@ -73,12 +73,12 @@ public final class HerobrineAiPromptBuilder {
 
     private static void appendMemories(StringBuilder out, List<String> memories) {
         if (memories.isEmpty()) {
-            out.append("(none)\\n");
+            out.append("(none)\n");
             return;
         }
 
         for (String memory : memories) {
-            out.append("- ").append(memory).append('\\n');
+            out.append("- ").append(memory).append('\n');
         }
     }
 
