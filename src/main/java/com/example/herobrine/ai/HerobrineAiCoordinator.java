@@ -24,8 +24,8 @@ import net.minecraft.world.item.Items;
 /**
  * Provider-neutral asynchronous AI boundary.
  *
- * No HTTP client or model SDK is embedded here. A future Qwen/Llama provider
- * can be attached without changing Minecraft-side behavior or action safety.
+ * Providers are external HTTP adapters. Minecraft-side behavior and action safety
+ * remain independent from any model vendor.
  */
 public final class HerobrineAiCoordinator implements AutoCloseable {
     private static final int QUEUE_WORKERS = 2;
@@ -43,14 +43,20 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
 
     private volatile HerobrineAiProvider primaryProvider;
     private volatile HerobrineAiProvider fallbackProvider;
+    private volatile HerobrineAiProvider tertiaryProvider;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final java.util.concurrent.atomic.AtomicInteger pendingRequests =
             new java.util.concurrent.atomic.AtomicInteger();
     private final Map<UUID, Long> lastMentionTick = new ConcurrentHashMap<>();
 
-    public void setProviders(HerobrineAiProvider primary, HerobrineAiProvider fallback) {
+    public void setProviders(
+            HerobrineAiProvider primary,
+            HerobrineAiProvider fallback,
+            HerobrineAiProvider tertiary
+    ) {
         this.primaryProvider = primary;
         this.fallbackProvider = fallback;
+        this.tertiaryProvider = tertiary;
     }
 
     public void requestFromMention(
@@ -77,8 +83,9 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
 
         HerobrineAiProvider primary = primaryProvider;
         HerobrineAiProvider fallback = fallbackProvider;
+        HerobrineAiProvider tertiary = tertiaryProvider;
 
-        if (primary == null && fallback == null) {
+        if (primary == null && fallback == null && tertiary == null) {
             HerobrineMod.LOGGER.debug(
                     "AI trigger queued but no external provider is configured yet for {}",
                     player.getGameProfile().name()
@@ -107,6 +114,14 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                     return CompletableFuture.completedFuture(decision);
                 }
                 return submit(fallback, request);
+            }).thenCompose(value -> value);
+        }
+        if (tertiary != null) {
+            future = future.handle((decision, error) -> {
+                if (error == null && decision != null) {
+                    return CompletableFuture.completedFuture(decision);
+                }
+                return submit(tertiary, request);
             }).thenCompose(value -> value);
         }
 
@@ -177,6 +192,8 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             executeDecision(level, hero, player, decision);
 
             if (decision.memoryNote() != null && !decision.memoryNote().isBlank()) {
+                com.example.herobrine.HerobrineWorldState worldState =
+                        com.example.herobrine.HerobrineWorldState.get(level.getServer());
                 worldState.recordAiMemory(
                         player.getUUID(),
                         decision.memoryNote(),
