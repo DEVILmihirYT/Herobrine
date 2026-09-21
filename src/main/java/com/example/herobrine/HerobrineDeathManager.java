@@ -27,6 +27,32 @@ public final class HerobrineDeathManager {
     private HerobrineDeathManager() {
     }
 
+    public static void beginRevenge(ServerPlayer player) {
+        if (player == null || !player.isAlive() || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        HerobrineEntity herobrine = findOrSpawnHerobrine(player);
+        if (herobrine == null) {
+            return;
+        }
+
+        herobrine.setStage(HerobrineStage.STAGE_3);
+        herobrine.markStage3Activated(level.getGameTime() / 24000L);
+        herobrine.setTarget(player);
+        player.sendSystemMessage(
+                net.minecraft.network.chat.Component.literal(
+                        "Herobrine: You thought time would make me forget."
+                )
+        );
+
+        player.setHealth(1.0F);
+        herobrine.doHurtTarget(level, player);
+        if (player.isAlive()) {
+            player.kill(level);
+        }
+    }
+
     public static void initialize() {
         ServerLivingEntityEvents.AFTER_DEATH.register(HerobrineDeathManager::afterDeath);
         ServerPlayerEvents.AFTER_RESPAWN.register(HerobrineDeathManager::afterRespawn);
