@@ -40,7 +40,6 @@ jobs:
           if-no-files-found: error
 
       - name: Optional AI provider smoke test
-        if: ${{ secrets.GROQ_API_KEY != '' || secrets.GEMINI_CHAT_API_KEY != '' }}
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_CHAT_API_KEY: ${{ secrets.GEMINI_CHAT_API_KEY }}
