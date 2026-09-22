@@ -108,12 +108,11 @@ public final class HerobrineManager {
         }
 
         HerobrineWorldState state = HerobrineWorldState.get(level.getServer());
-        if (state.isStarterKitGiven()) {
-            return;
-        }
 
-        giveExactHerobrineStarterKit(player);
-        state.markStarterKitGiven();
+        if (!state.isStarterKitGiven()) {
+            giveExactHerobrineStarterKit(player);
+            state.markStarterKitGiven();
+        }
 
         if (!state.isPermanentlyDefeated() && collectNearbyHerobrines(level).isEmpty()) {
             spawnStage1(level);
