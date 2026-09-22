@@ -252,7 +252,7 @@ public final class HerobrineDeathManager {
                     center.getX() + 0.5D,
                     center.getY() + 0.5D,
                     center.getZ() + 0.5D,
-                    1.5F,
+                    5.0F,
                     false,
                     Level.ExplosionInteraction.MOB
             );
