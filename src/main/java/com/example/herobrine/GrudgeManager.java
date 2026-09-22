@@ -54,7 +54,7 @@ public final class GrudgeManager {
                     ServerPlayer target = level.getServer().getPlayerList().getPlayer(playerId);
                     if (target != null && target.level() instanceof ServerLevel targetLevel) {
                         HerobrineDeathManager.beginRevenge(target);
-                        clearGrudge(level.getServer(), playerId);
+                        HerobrineWorldState.get(level.getServer()).clearGrudge(playerId);
                     }
                 } catch (IllegalArgumentException ignored) {
                     // Invalid persisted UUIDs are safely ignored.
