@@ -180,7 +180,7 @@ public final class HerobrineActionExecutor {
             return false;
         }
 
-        herobrine.setTarget(target);
+        herobrine.setStage3Target(target);
         return true;
     }
 
