@@ -237,12 +237,16 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             case GIVE_ITEM -> {
                 Item item = resolveGift(decision.itemId());
                 if (item != null) {
-                    HerobrineActionExecutor.giveItem(
-                            hero,
-                            player,
-                            item,
-                            Math.max(1, decision.itemCount())
-                    );
+                    int count = Math.max(1, decision.itemCount());
+                    if (item == Items.GOLDEN_APPLE) {
+                        com.example.herobrine.HerobrineWorldState worldState =
+                                com.example.herobrine.HerobrineWorldState.get(level.getServer());
+                        if (!worldState.claimGoldenApples(player.getUUID())) {
+                            return;
+                        }
+                        count = Math.min(count, 5);
+                    }
+                    HerobrineActionExecutor.giveItem(hero, player, item, count);
                 }
             }
             case APPROACH -> HerobrineActionExecutor.approach(hero, resolveTarget(level, player, decision));
