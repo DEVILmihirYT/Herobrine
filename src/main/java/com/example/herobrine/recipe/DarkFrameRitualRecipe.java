@@ -11,7 +11,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -31,7 +30,7 @@ public final class DarkFrameRitualRecipe extends CustomRecipe {
             new RecipeSerializer<>(CODEC, STREAM_CODEC);
 
     private DarkFrameRitualRecipe() {
-        super(CraftingBookCategory.MISC);
+        super();
     }
 
     @Override
@@ -44,7 +43,7 @@ public final class DarkFrameRitualRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingInput input) {
         return new ItemStack(ModBlocks.DARK_FRAME, RESULT_COUNT);
     }
 
