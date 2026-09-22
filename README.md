@@ -31,3 +31,23 @@ Planned systems include multiplayer-aware player tracking, local chat context, a
 ## Status
 
 Active development. The repository is built in small, testable phases; every subsystem is expected to pass GitHub Actions verification before it is treated as complete. The repository is intentionally being built in small, testable phases so every subsystem can be verified before the next one is added.
+
+
+## Current runtime requirements
+
+- Minecraft Java 26.1
+- Fabric Loader 0.19.5 / Fabric API 26.1
+- Java 25
+- AI providers are optional at build time and use runtime environment variables:
+  - `GROQ_API_KEY`
+  - `GEMINI_CHAT_API_KEY`
+  - `GEMINI_VOICE_API_KEY`
+  - `ELEVENLABS_API_KEY`
+- ElevenLabs voice mapping:
+  - Stage 1 → Harry (`SOYHLrjzK2X1ezoPC6cr`)
+  - Stage 2 → Charlie (`IKne3meq5aSn9XLyUdCD`)
+  - Stage 3 → Adam (`pNInz6obpgDQGcFmaJgB`)
+- Flashlight is removed. Mashaal remains.
+- Dark Frame ritual consumes exactly 3 Dragon Heads, 20 Nether Stars and 10 Sculk blocks and produces 30 Dark Frames.
+- A complete 4×5 Dark Frame structure creates the Dark Portal. Stage 3 entering it starts the 10-second red Doomsday BossBar and permanently disables Herobrine after the countdown.
+- The Doomsday effect is intentionally bounded to a 16-block spherical area around each online player; it does not intentionally crash the server/client.
