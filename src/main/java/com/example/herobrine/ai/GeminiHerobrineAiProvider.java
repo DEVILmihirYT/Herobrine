@@ -159,8 +159,12 @@ public final class GeminiHerobrineAiProvider implements HerobrineAiProvider {
 
         String content = null;
         for (var part : parts) {
-            if (part.has("text")) {
-                content = part.get("text").getAsString();
+            if (!part.isJsonObject()) {
+                continue;
+            }
+            JsonObject partObject = part.getAsJsonObject();
+            if (partObject.has("text") && !partObject.get("text").isJsonNull()) {
+                content = partObject.get("text").getAsString();
                 break;
             }
         }
