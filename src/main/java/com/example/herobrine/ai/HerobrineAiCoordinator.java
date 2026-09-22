@@ -22,6 +22,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.core.BlockPos;
 
 /**
  * Provider-neutral asynchronous AI boundary.
@@ -252,11 +257,113 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                     hero,
                     resolveTarget(level, player, decision)
             );
+            case ATTACK_HOSTILE -> {
+                Monster hostile = nearestHostile(level, hero, 16.0D);
+                if (hostile != null) {
+                    HerobrineActionExecutor.attackHostile(hero, hostile);
+                }
+            }
+            case STEAL_LOOT -> {
+                BlockPos chest = nearestChest(level, hero, 8);
+                if (chest != null) {
+                    HerobrineActionExecutor.stealFromChest(hero, level, chest);
+                }
+            }
+            case BURN_DROP -> {
+                ItemEntity drop = nearestDrop(level, hero, 12.0D);
+                if (drop != null) {
+                    HerobrineActionExecutor.burnDrop(hero, drop);
+                }
+            }
+            case BREAK_BLOCK -> {
+                BlockPos leaves = nearestLeaves(level, hero, 6);
+                if (leaves != null) {
+                    HerobrineActionExecutor.breakBlock(hero, level, leaves);
+                }
+            }
             default -> HerobrineMod.LOGGER.debug(
                     "AI action {} is validated but has no executor adapter yet",
                     decision.action()
             );
         }
+    }
+
+    private static Monster nearestHostile(ServerLevel level, HerobrineEntity hero, double range) {
+        double rangeSqr = range * range;
+        Monster nearest = null;
+        double best = rangeSqr;
+        for (Monster entity : level.getEntitiesOfClass(
+                Monster.class,
+                hero.getBoundingBox().inflate(range),
+                Monster::isAlive
+        )) {
+            double distance = hero.distanceToSqr(entity);
+            if (distance <= best) {
+                nearest = entity;
+                best = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static ItemEntity nearestDrop(ServerLevel level, HerobrineEntity hero, double range) {
+        double rangeSqr = range * range;
+        ItemEntity nearest = null;
+        double best = rangeSqr;
+        for (ItemEntity entity : level.getEntitiesOfClass(
+                ItemEntity.class,
+                hero.getBoundingBox().inflate(range),
+                ItemEntity::isAlive
+        )) {
+            double distance = hero.distanceToSqr(entity);
+            if (distance <= best) {
+                nearest = entity;
+                best = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static BlockPos nearestChest(ServerLevel level, HerobrineEntity hero, int radius) {
+        BlockPos origin = hero.blockPosition();
+        BlockPos nearest = null;
+        double best = Double.MAX_VALUE;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = origin.offset(dx, dy, dz);
+                    if (level.getBlockState(pos).getBlock() instanceof ChestBlock) {
+                        double distance = hero.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+                        if (distance < best) {
+                            best = distance;
+                            nearest = pos;
+                        }
+                    }
+                }
+            }
+        }
+        return nearest;
+    }
+
+    private static BlockPos nearestLeaves(ServerLevel level, HerobrineEntity hero, int radius) {
+        BlockPos origin = hero.blockPosition();
+        BlockPos nearest = null;
+        double best = Double.MAX_VALUE;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = origin.offset(dx, dy, dz);
+                    if (level.getBlockState(pos).getBlock() instanceof LeavesBlock) {
+                        double distance = hero.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+                        if (distance < best) {
+                            best = distance;
+                            nearest = pos;
+                        }
+                    }
+                }
+            }
+        }
+        return nearest;
     }
 
     private static ServerPlayer resolveTarget(
