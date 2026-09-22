@@ -8,7 +8,8 @@
   "license": "CC0-1.0",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.example.HerobrineMod"]
+    "main": ["com.example.HerobrineMod"],
+    "client": ["com.example.herobrine.client.HerobrineClient"]
   },
   "depends": {
     "fabricloader": ">=0.19.5",
