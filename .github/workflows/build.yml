@@ -74,7 +74,14 @@ jobs:
             if [ "$gemini_status" != "200" ]; then
               echo "Gemini smoke error:"
               grep -o '"message"[^,}]*' "$gemini_body" | head -1 || true
-              failed=1
+              case "$gemini_status" in
+                429|500|502|503|504)
+                  echo "::warning::Gemini smoke test is temporarily unavailable ($gemini_status); build remains valid."
+                  ;;
+                *)
+                  failed=1
+                  ;;
+              esac
             fi
             rm -f "$gemini_body"
           fi
