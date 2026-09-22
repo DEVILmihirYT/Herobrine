@@ -119,6 +119,13 @@ public final class HerobrineManager {
             spawnStage1(level);
         }
 
+        if (!state.isPermanentlyDefeated()
+                && state.isGrudgeActive(player.getUUID())
+                && level.getGameTime() / 24000L >= state.getRevengeUntilDay(player.getUUID())) {
+            HerobrineDeathManager.beginRevenge(player);
+            state.clearGrudge(player.getUUID());
+        }
+
         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "Something is watching... the netherrack is beginning to awaken."
         ));
