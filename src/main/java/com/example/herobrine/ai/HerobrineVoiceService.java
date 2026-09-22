@@ -104,7 +104,8 @@ public final class HerobrineVoiceService {
         double rangeSqr = HEARING_RANGE * HEARING_RANGE;
 
         for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(hero) <= rangeSqr) {
+            if (player.distanceToSqr(hero) <= rangeSqr
+                    && ServerPlayNetworking.canSend(player, HerobrineVoicePayload.TYPE)) {
                 ServerPlayNetworking.send(
                         player,
                         new HerobrineVoicePayload(hero.getX(), hero.getY(), hero.getZ(), audio)
