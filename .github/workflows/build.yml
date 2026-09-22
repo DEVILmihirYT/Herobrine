@@ -51,6 +51,8 @@ jobs:
               -H "Content-Type: application/json" \
               -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"Return exactly JSON with ok true."}],"response_format":{"type":"json_object"},"max_completion_tokens":20}' \
               https://api.groq.com/openai/v1/chat/completions)
+            echo "Groq smoke HTTP status: $status"
+            echo "Gemini smoke HTTP status: $status"
             test "$status" = "200"
           fi
           if [ -n "${GEMINI_CHAT_API_KEY:-}" ]; then
