@@ -52,7 +52,7 @@ jobs:
             groq_status=$(curl -sS -o "$groq_body" -w "%{http_code}" \
               -H "Authorization: Bearer $GROQ_API_KEY" \
               -H "Content-Type: application/json" \
-              -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"Return exactly JSON with ok true."}],"response_format":{"type":"json_object"},"include_reasoning":false,"max_completion_tokens":128}' \
+              -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"Return exactly JSON with ok true."}],"response_format":{"type":"json_schema","json_schema":{"name":"smoke","strict":true,"schema":{"type":"object","properties":{"ok":{"type":"boolean"}},"required":["ok"],"additionalProperties":false}}},"include_reasoning":false,"max_completion_tokens":128}' \
               https://api.groq.com/openai/v1/chat/completions)
             echo "Groq smoke HTTP status: $groq_status"
             if [ "$groq_status" != "200" ]; then
