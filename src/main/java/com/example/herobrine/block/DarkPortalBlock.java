@@ -1,15 +1,13 @@
 package com.example.herobrine.block;
 
-import com.example.HerobrineMod;
-import com.example.herobrine.entity.HerobrineEntity;
 import com.example.herobrine.HerobrineStage;
 import com.example.herobrine.HerobrineWorldState;
+import com.example.herobrine.entity.HerobrineEntity;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerBossEvent;
-import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.level.Level;
@@ -69,6 +67,23 @@ public final class DarkPortalBlock extends Block {
         }
     }
 
+    public static List<BlockPos> collectPortalBlocks(ServerLevel level, BlockPos center) {
+        List<BlockPos> result = new ArrayList<>();
+
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                for (int dz = -4; dz <= 4; dz++) {
+                    BlockPos pos = center.offset(dx, dy, dz);
+                    if (level.getBlockState(pos).getBlock() == ModBlocks.DARK_PORTAL) {
+                        result.add(pos.immutable());
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     @Override
     protected void entityInside(
             BlockState state,
@@ -85,7 +100,12 @@ public final class DarkPortalBlock extends Block {
         if (entity instanceof HerobrineEntity hero
                 && hero.getStage() == HerobrineStage.STAGE_3
                 && !HerobrineWorldState.get(serverLevel.getServer()).isPermanentlyDefeated()) {
-            HerobrineDoomsdayManager.begin(serverLevel.getServer(), hero);
+            HerobrineDoomsdayManager.begin(
+                    serverLevel.getServer(),
+                    hero,
+                    serverLevel,
+                    pos
+            );
         }
     }
 }

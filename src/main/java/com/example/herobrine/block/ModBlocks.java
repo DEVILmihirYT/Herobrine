@@ -2,7 +2,6 @@ package com.example.herobrine.block;
 
 import com.example.HerobrineMod;
 import java.util.function.Function;
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -12,7 +11,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ModBlocks {
@@ -29,8 +27,6 @@ public final class ModBlocks {
     );
 
     public static void registerModBlocks() {
-        CreativeModeTabEvents.modifyOutputEvent(net.minecraft.world.item.CreativeModeTabs.BUILDING_BLOCKS)
-                .register(output -> output.accept(DARK_FRAME.asItem()));
         HerobrineMod.LOGGER.info("Registering Dark Frame and Dark Portal");
     }
 
