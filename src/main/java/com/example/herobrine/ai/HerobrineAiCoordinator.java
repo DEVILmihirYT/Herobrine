@@ -37,7 +37,6 @@ import net.minecraft.core.BlockPos;
  */
 public final class HerobrineAiCoordinator implements AutoCloseable {
     private static final int QUEUE_WORKERS = 2;
-    private static final int MAX_PENDING_REQUESTS = 8;
     private static final long MENTION_COOLDOWN_TICKS = 100L;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(
@@ -104,11 +103,6 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             return;
         }
 
-        if (pendingRequests.get() >= MAX_PENDING_REQUESTS) {
-            HerobrineMod.LOGGER.debug("Herobrine AI request queue is full; ignoring trigger from {}", player.getGameProfile().name());
-            return;
-        }
-
         lastMentionTick.put(player.getUUID(), now);
         submitRequest(level, hero, player, request, false);
     }
@@ -167,15 +161,6 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         HerobrineAiProvider tertiary = tertiaryProvider;
 
         if (primary == null && fallback == null && tertiary == null) {
-            return;
-        }
-
-        if (pendingRequests.get() >= MAX_PENDING_REQUESTS) {
-            HerobrineMod.LOGGER.debug(
-                    "Herobrine AI request queue is full; ignoring trigger {} from {}",
-                    request.trigger(),
-                    player.getGameProfile().name()
-            );
             return;
         }
 
