@@ -3,6 +3,8 @@ package com.example;
 import com.example.herobrine.HerobrineDeathManager;
 import com.example.herobrine.HerobrineManager;
 import com.example.herobrine.item.ModItems;
+import com.example.herobrine.block.ModBlocks;
+import com.example.herobrine.block.HerobrineDoomsdayManager;
 import com.example.herobrine.entity.ModEntityTypes;
 import net.fabricmc.api.ModInitializer;
 import com.example.herobrine.network.HerobrineVoicePayload;
@@ -23,6 +25,8 @@ public class HerobrineMod implements ModInitializer {
                 HerobrineVoicePayload.CODEC
         );
         ModItems.registerModItems();
+        ModBlocks.registerModBlocks();
+        HerobrineDoomsdayManager.initialize();
         HerobrineManager.initialize();
         HerobrineDeathManager.initialize();
     }
