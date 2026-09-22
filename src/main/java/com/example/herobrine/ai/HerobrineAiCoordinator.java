@@ -262,7 +262,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                     decision.action()
             );
 
-            executeDecision(level, hero, player, decision);
+            executeDecision(level, hero, player, decision, voiceOnly);
 
             if (decision.memoryNote() != null && !decision.memoryNote().isBlank()) {
                 com.example.herobrine.HerobrineWorldState worldState =
@@ -281,7 +281,8 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             ServerLevel level,
             HerobrineEntity hero,
             ServerPlayer player,
-            HerobrineAiDecision decision
+            HerobrineAiDecision decision,
+            boolean voiceOnly
     ) {
         switch (decision.action()) {
             case SPEAK -> {
