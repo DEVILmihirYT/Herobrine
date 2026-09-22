@@ -170,7 +170,7 @@ public final class HerobrineManager {
             if (sender.level() instanceof ServerLevel level) {
                 HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
 
-                if (hero == null && !hasHerobrineAnywhere(sender.getServer())) {
+                if (hero == null && !hasHerobrineAnywhere(level.getServer())) {
                     hero = spawnStage1BehindMention(level, sender);
                 }
 
