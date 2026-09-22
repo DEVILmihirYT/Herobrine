@@ -255,6 +255,23 @@ public final class HerobrineWorldState extends SavedData {
         return true;
     }
 
+    public void clearGrudge(UUID playerId) {
+        PlayerState existing = findPlayer(playerId);
+        if (existing == null || !existing.grudgeActive()) {
+            return;
+        }
+
+        upsertPlayer(new PlayerState(
+                existing.uuid(),
+                false,
+                -1L,
+                existing.memories(),
+                existing.relationship(),
+                existing.lastInteractionDay(),
+                existing.goldenApplesGiven()
+        ));
+    }
+
     public void clearPlayerState(UUID playerId) {
         String id = playerId.toString();
         if (players.removeIf(state -> state.uuid().equals(id))) {
