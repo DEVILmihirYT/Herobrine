@@ -37,6 +37,9 @@ public final class HerobrineAiPromptBuilder {
         out.append("\nRECENT LOCAL CHAT (bounded):\n");
         appendChat(out, request.recentChat());
 
+        out.append("\nBEHAVIOUR REFERENCE:\n");
+        out.append(HerobrineAiBehaviorReference.text()).append('\n');
+
         out.append("\nDECISION RULE:\n");
         out.append("Choose one believable intent from the capabilities supplied by Minecraft. ");
         out.append("Do not invent unavailable actions. Silence/OBSERVE is valid. ");
