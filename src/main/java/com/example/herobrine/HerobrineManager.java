@@ -36,9 +36,9 @@ public final class HerobrineManager {
 
     public static void initialize() {
         AI_COORDINATOR.setProviders(
+                new GeminiHerobrineAiProvider(),
                 new GroqHerobrineAiProvider("openai/gpt-oss-120b"),
-                new GroqHerobrineAiProvider("openai/gpt-oss-20b"),
-                new GeminiHerobrineAiProvider()
+                new GroqHerobrineAiProvider("openai/gpt-oss-20b")
         );
 
         ServerTickEvents.END_LEVEL_TICK.register(HerobrineManager::tickLevel);
@@ -160,51 +160,64 @@ public final class HerobrineManager {
 
     private static void handleChatMention(PlayerChatMessage message, ServerPlayer sender) {
         String text = message.signedContent();
-        CHAT_MEMORY.add(new HerobrineChatMemory.Message(
-                sender.getUUID(),
-                sender.getName().getString(),
-                text,
-                sender.level().getGameTime()
-        ));
+        HerobrineChatMemory.BatchSignal signal = CHAT_MEMORY.add(
+                new HerobrineChatMemory.Message(
+                        sender.getUUID(),
+                        sender.getName().getString(),
+                        text,
+                        sender.level().getGameTime()
+                )
+        );
 
-        if (containsPublicMention(text)) {
-            HerobrineMod.LOGGER.info(
-                    "Hero AI trigger detected from {}: explicit Hero/Herobrine mention",
-                    sender.getGameProfile().name()
-            );
+        if (!(sender.level() instanceof ServerLevel level)
+                || HerobrineWorldState.get(level.getServer()).isPermanentlyDefeated()) {
+            return;
+        }
 
-            if (sender.level() instanceof ServerLevel level) {
-                HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
+        HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
+        boolean explicitVerityMention = containsVerityTrigger(text);
 
-                if (hero == null && !hasHerobrineAnywhere(level.getServer())) {
-                    hero = spawnStage1BehindMention(level, sender);
-                }
+        if (explicitVerityMention) {
+            if (hero == null && !hasHerobrineAnywhere(level.getServer())) {
+                hero = spawnStage1BehindMention(level, sender);
+            }
 
-                if (hero != null) {
-                    AI_COORDINATOR.requestFromMention(level, hero, sender);
-                }
+            if (hero != null) {
+                AI_COORDINATOR.requestFromMention(level, hero, sender);
+            }
+            return;
+        }
+
+        // Every 20 messages is a bounded background scan. It can update memory,
+        // but it is never allowed to speak or perform a gameplay action.
+        if (signal.chatBatchReady && hero != null) {
+            if (signal.voiceCheckReady) {
+                AI_COORDINATOR.requestFromVoiceCheck(level, hero, sender);
+            } else {
+                AI_COORDINATOR.requestFromChatBatch(level, hero, sender);
             }
         }
     }
 
-    private static boolean containsPublicMention(String text) {
-        String[] tokens = text
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", " ")
-                .trim()
-                .split("\\s+");
-
-        for (String token : tokens) {
-            if (token.equals("hero") || token.equals("herobrine")) {
-                return true;
-            }
+    private static boolean containsVerityTrigger(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
         }
 
-        return false;
+        String normalized = text
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim();
+
+        return normalized.matches(".*\\b(?:hey|oye)\\s+verity\\b.*");
     }
 
     public static List<HerobrineChatMemory.Message> recentChat() {
         return CHAT_MEMORY.recent();
+    }
+
+    public static List<HerobrineChatMemory.Message> recentChat(java.util.UUID playerId) {
+        return CHAT_MEMORY.recentFor(playerId);
     }
 
     public static List<HerobrinePlayerTracker.Snapshot> trackedPlayers() {
