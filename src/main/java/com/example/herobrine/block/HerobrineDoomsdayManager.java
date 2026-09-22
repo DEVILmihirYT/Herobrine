@@ -39,6 +39,7 @@ public final class HerobrineDoomsdayManager {
         running = true;
         ticksRemaining = COUNTDOWN_TICKS;
         bossBar = new ServerBossEvent(
+                java.util.UUID.randomUUID(),
                 Component.literal("HEROBRINE — DOOMSDAY"),
                 BossEvent.BossBarColor.RED,
                 BossEvent.BossBarOverlay.PROGRESS
@@ -96,7 +97,9 @@ public final class HerobrineDoomsdayManager {
         }
 
         if (bossBar != null) {
-            bossBar.clearPlayers();
+            for (ServerPlayer player : new java.util.ArrayList<>(bossBar.getPlayers())) {
+                bossBar.removePlayer(player);
+            }
             bossBar.setVisible(false);
         }
 
