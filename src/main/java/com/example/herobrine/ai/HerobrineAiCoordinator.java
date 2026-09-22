@@ -240,11 +240,32 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                     );
                 }
             }
+            case APPROACH -> HerobrineActionExecutor.approach(hero, resolveTarget(level, player, decision));
+            case FOLLOW -> HerobrineActionExecutor.follow(hero, resolveTarget(level, player, decision));
+            case HIDE -> HerobrineActionExecutor.hide(hero, resolveTarget(level, player, decision));
+            case RETREAT -> HerobrineActionExecutor.retreat(hero, resolveTarget(level, player, decision));
+            case TELEPORT_BEHIND -> HerobrineActionExecutor.teleportBehind(
+                    hero,
+                    resolveTarget(level, player, decision)
+            );
+            case TRIGGER_ENCOUNTER -> HerobrineActionExecutor.triggerEncounter(
+                    hero,
+                    resolveTarget(level, player, decision)
+            );
             default -> HerobrineMod.LOGGER.debug(
                     "AI action {} is validated but has no executor adapter yet",
                     decision.action()
             );
         }
+    }
+
+    private static ServerPlayer resolveTarget(
+            ServerLevel level,
+            ServerPlayer fallback,
+            HerobrineAiDecision decision
+    ) {
+        ServerPlayer explicit = findPlayer(level, decision.targetPlayer());
+        return explicit != null ? explicit : fallback;
     }
 
     private static ServerPlayer findPlayer(ServerLevel level, UUID playerId) {
