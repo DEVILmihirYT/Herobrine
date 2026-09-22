@@ -81,18 +81,14 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                 player.getUUID(),
                 player.getName().getString(),
                 hero.getStage(),
-                "explicit_hero_mention",
-                HerobrineManager.recentChat(),
+                "explicit_verity_mention",
+                HerobrineManager.recentChat(player.getUUID()),
                 HerobrineManager.trackedPlayers(),
                 worldState.getAiMemories(player.getUUID()),
                 worldState.getRelationship(player.getUUID())
         );
 
-        HerobrineAiProvider primary = primaryProvider;
-        HerobrineAiProvider fallback = fallbackProvider;
-        HerobrineAiProvider tertiary = tertiaryProvider;
-
-        if (primary == null && fallback == null && tertiary == null) {
+        if (primaryProvider == null && fallbackProvider == null && tertiaryProvider == null) {
             HerobrineMod.LOGGER.debug(
                     "AI trigger queued but no external provider is configured yet for {}",
                     player.getGameProfile().name()
@@ -113,6 +109,75 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         }
 
         lastMentionTick.put(player.getUUID(), now);
+        submitRequest(level, hero, player, request, false);
+    }
+
+    public void requestFromChatBatch(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player
+    ) {
+        requestFromBackground(level, hero, player, "chat_batch_20", false);
+    }
+
+    public void requestFromVoiceCheck(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player
+    ) {
+        requestFromBackground(level, hero, player, "voice_check_40", true);
+    }
+
+    private void requestFromBackground(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player,
+            String trigger,
+            boolean voiceOnly
+    ) {
+        if (closed.get() || hero == null || !hero.isAlive() || player == null || !player.isAlive()) {
+            return;
+        }
+
+        HerobrineWorldState worldState = HerobrineWorldState.get(level.getServer());
+        HerobrineAiRequest request = new HerobrineAiRequest(
+                player.getUUID(),
+                player.getName().getString(),
+                hero.getStage(),
+                trigger,
+                HerobrineManager.recentChat(player.getUUID()),
+                HerobrineManager.trackedPlayers(),
+                worldState.getAiMemories(player.getUUID()),
+                worldState.getRelationship(player.getUUID())
+        );
+
+        submitRequest(level, hero, player, request, voiceOnly);
+    }
+
+    private void submitRequest(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player,
+            HerobrineAiRequest request,
+            boolean voiceOnly
+    ) {
+        HerobrineAiProvider primary = primaryProvider;
+        HerobrineAiProvider fallback = fallbackProvider;
+        HerobrineAiProvider tertiary = tertiaryProvider;
+
+        if (primary == null && fallback == null && tertiary == null) {
+            return;
+        }
+
+        if (pendingRequests.get() >= MAX_PENDING_REQUESTS) {
+            HerobrineMod.LOGGER.debug(
+                    "Herobrine AI request queue is full; ignoring trigger {} from {}",
+                    request.trigger(),
+                    player.getGameProfile().name()
+            );
+            return;
+        }
+
         pendingRequests.incrementAndGet();
         CompletableFuture<HerobrineAiDecision> future = submit(primary, request);
         if (fallback != null) {
@@ -135,7 +200,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         future.whenCompleteAsync(
                 (decision, error) -> {
                     try {
-                        handleResult(level, hero, player, request, decision, error);
+                        handleResult(level, hero, player, request, decision, error, voiceOnly);
                     } finally {
                         pendingRequests.decrementAndGet();
                     }
@@ -167,14 +232,15 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             ServerPlayer player,
             HerobrineAiRequest request,
             HerobrineAiDecision decision,
-            Throwable error
+            Throwable error,
+            boolean voiceOnly
     ) {
         if (error != null || decision == null) {
             HerobrineMod.LOGGER.warn("Herobrine AI request failed", error);
             return;
         }
 
-        if (!isActionAllowed(request.stage(), decision.action())) {
+        if (!isActionAllowed(request.stage(), request.trigger(), decision.action())) {
             HerobrineMod.LOGGER.warn(
                     "Rejected AI action {} for stage {}",
                     decision.action(),
@@ -220,7 +286,9 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         switch (decision.action()) {
             case SPEAK -> {
                 if (decision.speech() != null && !decision.speech().isBlank()) {
-                    player.sendSystemMessage(Component.literal(decision.speech()));
+                    if (!voiceOnly) {
+                        player.sendSystemMessage(Component.literal(decision.speech()));
+                    }
                     HerobrineVoiceService.speak(level, hero, decision.speech());
                 }
             }
@@ -425,10 +493,19 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
 
     private static boolean isActionAllowed(
             HerobrineStage stage,
+            String trigger,
             HerobrineAction action
     ) {
         if (action == null) {
             return false;
+        }
+
+        if ("chat_batch_20".equals(trigger)) {
+            return action == HerobrineAction.OBSERVE;
+        }
+
+        if ("voice_check_40".equals(trigger)) {
+            return action == HerobrineAction.SPEAK || action == HerobrineAction.OBSERVE;
         }
 
         return switch (stage) {
