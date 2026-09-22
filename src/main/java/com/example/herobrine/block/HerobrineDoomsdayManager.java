@@ -3,8 +3,6 @@ package com.example.herobrine.block;
 import com.example.HerobrineMod;
 import com.example.herobrine.HerobrineWorldState;
 import com.example.herobrine.entity.HerobrineEntity;
-import java.util.HashSet;
-import java.util.Set;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -13,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 
 public final class HerobrineDoomsdayManager {
     private static final int COUNTDOWN_TICKS = 200;
@@ -87,12 +86,12 @@ public final class HerobrineDoomsdayManager {
         state.markPermanentlyDefeated();
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            player.connection.send(new ClientboundSetTitleTextPacket(
+                    Component.literal("HEROBRINE")
+            ));
             player.sendSystemMessage(Component.literal(
                     "HEROBRINE: DOOMSDAY."
             ));
-        }
-
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             destroyBoundedArea(player);
         }
 
@@ -112,17 +111,18 @@ public final class HerobrineDoomsdayManager {
     private static void destroyBoundedArea(ServerPlayer player) {
         var level = player.level();
         var center = player.blockPosition();
-        Set<Long> protectedChunks = new HashSet<>();
 
         for (int dx = -DESTROY_RADIUS; dx <= DESTROY_RADIUS; dx++) {
-            for (int dz = -DESTROY_RADIUS; dz <= DESTROY_RADIUS; dz++) {
-                if (dx * dx + dz * dz > DESTROY_RADIUS * DESTROY_RADIUS) {
-                    continue;
-                }
+            for (int dy = -DESTROY_RADIUS; dy <= DESTROY_RADIUS; dy++) {
+                for (int dz = -DESTROY_RADIUS; dz <= DESTROY_RADIUS; dz++) {
+                    if (dx * dx + dy * dy + dz * dz > DESTROY_RADIUS * DESTROY_RADIUS) {
+                        continue;
+                    }
 
-                var pos = center.offset(dx, 0, dz);
-                if (level.isLoaded(pos)) {
-                    level.destroyBlock(pos, false, player, 0);
+                    var pos = center.offset(dx, dy, dz);
+                    if (level.isLoaded(pos) && !level.getBlockState(pos).isAir()) {
+                        level.destroyBlock(pos, false, player, 0);
+                    }
                 }
             }
         }
