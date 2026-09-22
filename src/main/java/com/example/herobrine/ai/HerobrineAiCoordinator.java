@@ -6,6 +6,7 @@ import com.example.herobrine.HerobrineActionExecutor;
 import com.example.herobrine.HerobrineChatMemory;
 import com.example.herobrine.HerobrineManager;
 import com.example.herobrine.GrudgeManager;
+import com.example.herobrine.ai.HerobrineVoiceService;
 import com.example.herobrine.HerobrinePlayerTracker;
 import com.example.herobrine.HerobrineStage;
 import com.example.herobrine.entity.HerobrineEntity;
@@ -215,6 +216,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
             case SPEAK -> {
                 if (decision.speech() != null && !decision.speech().isBlank()) {
                     player.sendSystemMessage(Component.literal(decision.speech()));
+                    HerobrineVoiceService.speak(level, hero, decision.speech());
                 }
             }
             case OBSERVE -> {
