@@ -5,6 +5,7 @@ import com.example.herobrine.HerobrineAction;
 import com.example.herobrine.HerobrineActionExecutor;
 import com.example.herobrine.HerobrineChatMemory;
 import com.example.herobrine.HerobrineManager;
+import com.example.herobrine.HerobrineWorldState;
 import com.example.herobrine.GrudgeManager;
 import com.example.herobrine.ai.HerobrineVoiceService;
 import com.example.herobrine.HerobrinePlayerTracker;
