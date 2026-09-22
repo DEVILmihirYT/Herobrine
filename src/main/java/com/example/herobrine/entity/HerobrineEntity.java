@@ -240,6 +240,7 @@ public class HerobrineEntity extends PathfinderMob {
         Player target = getTarget() instanceof Player player ? player : null;
 
         if (stage3AttackCooldownTicks > 0) {
+            stage3AttackCooldownTicks--;
             setTarget(null);
             getNavigation().stop();
 
