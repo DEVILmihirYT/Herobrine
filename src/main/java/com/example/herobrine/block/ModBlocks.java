@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.Blocks;
 public final class ModBlocks {
     public static final Block DARK_FRAME = register(
             "dark_frame",
-            Block::new,
+            DarkFrameBlock::new,
             BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN).strength(50.0F, 1200.0F)
     );
 
