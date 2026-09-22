@@ -39,7 +39,7 @@ public final class HerobrineDeathManager {
 
         herobrine.setStage(HerobrineStage.STAGE_3);
         herobrine.markStage3Activated(level.getGameTime() / 24000L);
-        herobrine.setTarget(player);
+        herobrine.setStage3Target(player);
         player.sendSystemMessage(
                 net.minecraft.network.chat.Component.literal(
                         "Herobrine: You thought time would make me forget."
@@ -136,7 +136,7 @@ public final class HerobrineDeathManager {
 
         herobrine.setStage(HerobrineStage.STAGE_3);
         herobrine.markStage3Activated(((ServerLevel) newPlayer.level()).getGameTime() / 24000L);
-        herobrine.setTarget(newPlayer);
+        herobrine.setStage3Target(newPlayer);
         herobrine.setPos(
                 newPlayer.getX() + 2.0D,
                 newPlayer.getY(),
