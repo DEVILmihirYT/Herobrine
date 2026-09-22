@@ -36,6 +36,7 @@ public class HerobrineEntity extends PathfinderMob {
     private long lifecycleStartDay = -1L;
     private long stage2Day = -1L;
     private long stage3Day = -1L;
+    private UUID stage3TargetPlayerId;
     private int retreatTicks = 0;
     private int stage3AttackCooldownTicks = 0;
     private int stage1SpawnAnimationTicks = 0;
@@ -84,6 +85,15 @@ public class HerobrineEntity extends PathfinderMob {
 
     public void markStage3Activated(long day) {
         stage3Day = day;
+    }
+
+    public UUID getStage3TargetPlayerId() {
+        return stage3TargetPlayerId;
+    }
+
+    public void setStage3Target(ServerPlayer player) {
+        stage3TargetPlayerId = player == null ? null : player.getUUID();
+        setTarget(player);
     }
 
     public boolean isInteractionBlocked(UUID playerId) {
@@ -149,6 +159,9 @@ public class HerobrineEntity extends PathfinderMob {
         valueOutput.putLong("LifecycleStartDay", lifecycleStartDay);
         valueOutput.putLong("Stage2Day", stage2Day);
         valueOutput.putLong("Stage3Day", stage3Day);
+        if (stage3TargetPlayerId != null) {
+            valueOutput.putString("Stage3TargetPlayer", stage3TargetPlayerId.toString());
+        }
         valueOutput.putString("HerobrineStage", stage.name());
     }
 
@@ -158,6 +171,16 @@ public class HerobrineEntity extends PathfinderMob {
         lifecycleStartDay = valueInput.getLong("LifecycleStartDay").orElse(-1L);
         stage2Day = valueInput.getLong("Stage2Day").orElse(-1L);
         stage3Day = valueInput.getLong("Stage3Day").orElse(-1L);
+        String targetId = valueInput.getString("Stage3TargetPlayer").orElse("");
+        if (!targetId.isBlank()) {
+            try {
+                stage3TargetPlayerId = UUID.fromString(targetId);
+            } catch (IllegalArgumentException ignored) {
+                stage3TargetPlayerId = null;
+            }
+        } else {
+            stage3TargetPlayerId = null;
+        }
 
         String savedStage = valueInput
                 .getString("HerobrineStage")
@@ -239,6 +262,15 @@ public class HerobrineEntity extends PathfinderMob {
     private void tickStage3Behavior() {
         Player target = getTarget() instanceof Player player ? player : null;
 
+        if (stage3TargetPlayerId != null && (target == null || !target.isAlive())) {
+            ServerPlayer onlineTarget = ((ServerLevel) level()).getServer().getPlayerList()
+                    .getPlayer(stage3TargetPlayerId);
+            if (onlineTarget != null && onlineTarget.level() == level()) {
+                setTarget(onlineTarget);
+                target = onlineTarget;
+            }
+        }
+
         if (stage3AttackCooldownTicks > 0) {
             stage3AttackCooldownTicks--;
             setTarget(null);
@@ -254,9 +286,15 @@ public class HerobrineEntity extends PathfinderMob {
             return;
         }
 
-        if (target == null || !target.isAlive() || distanceTo(target) > STAGE3_ACTIVE_RANGE) {
+        if (target == null || !target.isAlive()) {
+            getNavigation().stop();
+            setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+
+        if (distanceTo(target) > STAGE3_ACTIVE_RANGE) {
             setTarget(null);
-            discard();
+            getNavigation().stop();
             return;
         }
 
