@@ -20,7 +20,8 @@ public final class HerobrineWorldState extends SavedData {
             long revengeUntilDay,
             List<String> memories,
             int relationship,
-            long lastInteractionDay
+            long lastInteractionDay,
+            boolean goldenApplesGiven
     ) {
         private static final Codec<PlayerState> CODEC = RecordCodecBuilder.create(instance ->
                 instance.group(
@@ -29,7 +30,8 @@ public final class HerobrineWorldState extends SavedData {
                         Codec.LONG.fieldOf("revengeUntilDay").forGetter(PlayerState::revengeUntilDay),
                         Codec.STRING.listOf().optionalFieldOf("memories", List.of()).forGetter(PlayerState::memories),
                         Codec.INT.optionalFieldOf("relationship", 0).forGetter(PlayerState::relationship),
-                        Codec.LONG.optionalFieldOf("lastInteractionDay", -1L).forGetter(PlayerState::lastInteractionDay)
+                        Codec.LONG.optionalFieldOf("lastInteractionDay", -1L).forGetter(PlayerState::lastInteractionDay),
+                        Codec.BOOL.optionalFieldOf("goldenApplesGiven", false).forGetter(PlayerState::goldenApplesGiven)
                 ).apply(instance, PlayerState::new)
         );
     }
@@ -169,7 +171,8 @@ public final class HerobrineWorldState extends SavedData {
                 revengeUntilDay,
                 state == null ? List.of() : state.memories(),
                 state == null ? 0 : state.relationship(),
-                state == null ? -1L : state.lastInteractionDay()
+                state == null ? -1L : state.lastInteractionDay(),
+                state != null && state.goldenApplesGiven()
         ));
     }
 
@@ -187,7 +190,8 @@ public final class HerobrineWorldState extends SavedData {
                 day,
                 existing == null ? List.of() : existing.memories(),
                 existing == null ? 0 : existing.relationship(),
-                existing == null ? -1L : existing.lastInteractionDay()
+                existing == null ? -1L : existing.lastInteractionDay(),
+                existing != null && existing.goldenApplesGiven()
         ));
     }
 
@@ -228,8 +232,27 @@ public final class HerobrineWorldState extends SavedData {
                 revengeUntilDay,
                 memories,
                 nextRelationship,
-                currentDay
+                currentDay,
+                existing != null && existing.goldenApplesGiven()
         ));
+    }
+
+    public boolean claimGoldenApples(UUID playerId) {
+        PlayerState existing = findPlayer(playerId);
+        if (existing != null && existing.goldenApplesGiven()) {
+            return false;
+        }
+
+        upsertPlayer(new PlayerState(
+                playerId.toString(),
+                existing != null && existing.grudgeActive(),
+                existing == null ? -1L : existing.revengeUntilDay(),
+                existing == null ? List.of() : existing.memories(),
+                existing == null ? 0 : existing.relationship(),
+                existing == null ? -1L : existing.lastInteractionDay(),
+                true
+        ));
+        return true;
     }
 
     public void clearPlayerState(UUID playerId) {
