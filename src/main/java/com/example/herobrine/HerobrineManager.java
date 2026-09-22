@@ -169,6 +169,11 @@ public final class HerobrineManager {
 
             if (sender.level() instanceof ServerLevel level) {
                 HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
+
+                if (hero == null && !hasHerobrineAnywhere(sender.getServer())) {
+                    hero = spawnStage1BehindMention(level, sender);
+                }
+
                 if (hero != null) {
                     AI_COORDINATOR.requestFromMention(level, hero, sender);
                 }
@@ -198,6 +203,49 @@ public final class HerobrineManager {
 
     public static List<HerobrinePlayerTracker.Snapshot> trackedPlayers() {
         return PLAYER_TRACKER.snapshots();
+    }
+
+    private static HerobrineEntity spawnStage1BehindMention(
+            ServerLevel level,
+            ServerPlayer player
+    ) {
+        BlockPos spawnPos = findBehindPlayerPosition(level, player, 20.0D, 30.0D);
+        HerobrineEntity entity = ModEntityTypes.HEROBRINE.spawn(
+                level,
+                spawnPos,
+                EntitySpawnReason.TRIGGERED
+        );
+
+        if (entity != null) {
+            entity.setStage(
+                    HerobrineWorldState.get(level.getServer()).isStage2Unlocked()
+                            ? HerobrineStage.STAGE_2
+                            : HerobrineStage.STAGE_1
+            );
+
+            if (entity.getStage() == HerobrineStage.STAGE_1) {
+                equipStandardLoadout(entity);
+                entity.beginStage1SpawnAnimation(spawnPos);
+            }
+        }
+
+        return entity;
+    }
+
+    private static boolean hasHerobrineAnywhere(net.minecraft.server.MinecraftServer server) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (!level.getEntitiesOfClass(
+                    HerobrineEntity.class,
+                    new net.minecraft.world.phys.AABB(
+                            -3.0E7D, -3.0E7D, -3.0E7D,
+                            3.0E7D, 3.0E7D, 3.0E7D
+                    ),
+                    HerobrineEntity::isAlive
+            ).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static HerobrineEntity spawnStage1(ServerLevel level) {
