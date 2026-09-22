@@ -128,6 +128,6 @@ public final class HerobrineVoiceService {
     private static String escapeJson(String text) {
         return text
                 .replace("\\\\", "\\\\\\\\")
-                .replace("\"", "\\\\"");
+                .replace("\"", "\\\"");
     }
 }
