@@ -16,6 +16,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
 public final class HerobrineActionExecutor {
     private static final int MAX_GOLDEN_APPLES_PER_GIFT = 5;
@@ -63,6 +65,110 @@ public final class HerobrineActionExecutor {
         }
 
         return herobrine.doHurtTarget((ServerLevel) herobrine.level(), target);
+    }
+
+    public static boolean approach(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        double speed = herobrine.getStage() == HerobrineStage.STAGE_3 ? 1.0D : 0.85D;
+        return herobrine.getNavigation().moveTo(target, speed);
+    }
+
+    public static boolean follow(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        double distance = herobrine.distanceTo(target);
+        if (distance < 4.0D) {
+            herobrine.getNavigation().stop();
+            return true;
+        }
+
+        double speed = herobrine.getStage() == HerobrineStage.STAGE_3 ? 0.95D : 0.75D;
+        return herobrine.getNavigation().moveTo(target, speed);
+    }
+
+    public static boolean hide(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        Vec3 away = herobrine.position().subtract(target.position());
+        if (away.lengthSqr() < 0.001D) {
+            away = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+
+        Vec3 destination = herobrine.position().add(away.normalize().scale(10.0D));
+        herobrine.getNavigation().moveTo(destination.x, destination.y, destination.z, 0.8D);
+        return true;
+    }
+
+    public static boolean retreat(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        Vec3 away = herobrine.position().subtract(target.position());
+        if (away.lengthSqr() < 0.001D) {
+            away = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+
+        Vec3 destination = herobrine.position().add(away.normalize().scale(14.0D));
+        herobrine.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.0D);
+        return true;
+    }
+
+    public static boolean teleportBehind(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        ServerLevel level = (ServerLevel) herobrine.level();
+        Vec3 look = target.getLookAngle();
+        Vec3 horizontal = new Vec3(look.x, 0.0D, look.z);
+        if (horizontal.lengthSqr() < 0.001D) {
+            horizontal = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            horizontal = horizontal.normalize();
+        }
+
+        double distance = 20.0D + level.getRandom().nextDouble() * 10.0D;
+        double x = target.getX() - horizontal.x * distance;
+        double z = target.getZ() - horizontal.z * distance;
+        int blockX = (int) Math.floor(x);
+        int blockZ = (int) Math.floor(z);
+        int groundY = level.getHeight(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                blockX,
+                blockZ
+        );
+
+        BlockPos position = new BlockPos(blockX, groundY, blockZ);
+        if (!level.getBlockState(position).getCollisionShape(level, position).isEmpty()) {
+            position = position.above();
+        }
+
+        herobrine.setPos(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D);
+        herobrine.getNavigation().stop();
+        return true;
+    }
+
+    public static boolean triggerEncounter(HerobrineEntity herobrine, ServerPlayer target) {
+        if (!isValidMovementTarget(herobrine, target)) {
+            return false;
+        }
+
+        return teleportBehind(herobrine, target);
+    }
+
+    private static boolean isValidMovementTarget(HerobrineEntity herobrine, ServerPlayer target) {
+        return herobrine.isAlive()
+                && target != null
+                && target.isAlive()
+                && herobrine.level() == target.level();
     }
 
     public static boolean attackPlayer(HerobrineEntity herobrine, ServerPlayer target) {
