@@ -190,8 +190,8 @@ public final class HerobrineManager {
 
         // Every 20 messages is a bounded background scan. It can update memory,
         // but it is never allowed to speak or perform a gameplay action.
-        if (signal.chatBatchReady && hero != null) {
-            if (signal.voiceCheckReady) {
+        if (signal.chatBatchReady() && hero != null) {
+            if (signal.voiceCheckReady()) {
                 AI_COORDINATOR.requestFromVoiceCheck(level, hero, sender);
             } else {
                 AI_COORDINATOR.requestFromChatBatch(level, hero, sender);
