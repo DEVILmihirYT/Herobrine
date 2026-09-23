@@ -175,15 +175,19 @@ public final class HerobrineManager {
         }
 
         HerobrineEntity hero = findNearest(level, sender, TRACK_RANGE);
-        boolean explicitVerityMention = containsVerityTrigger(text);
+        MentionTrigger trigger = detectMentionTrigger(text);
 
-        if (explicitVerityMention) {
+        if (trigger != MentionTrigger.NONE) {
             if (hero == null && !hasHerobrineAnywhere(level.getServer())) {
                 hero = spawnStage1BehindMention(level, sender);
             }
 
             if (hero != null) {
-                AI_COORDINATOR.requestFromMention(level, hero, sender);
+                if (trigger == MentionTrigger.HERO && hero.getStage() != HerobrineStage.STAGE_3) {
+                    AI_COORDINATOR.respondToHeroIdentity(level, hero, sender);
+                } else if (trigger == MentionTrigger.HEROBRINE) {
+                    AI_COORDINATOR.requestFromMention(level, hero, sender);
+                }
             }
             return;
         }
@@ -199,9 +203,15 @@ public final class HerobrineManager {
         }
     }
 
-    private static boolean containsVerityTrigger(String text) {
+    private enum MentionTrigger {
+        NONE,
+        HERO,
+        HEROBRINE
+    }
+
+    private static MentionTrigger detectMentionTrigger(String text) {
         if (text == null || text.isBlank()) {
-            return false;
+            return MentionTrigger.NONE;
         }
 
         String normalized = text
@@ -209,7 +219,13 @@ public final class HerobrineManager {
                 .replaceAll("[^a-z0-9]+", " ")
                 .trim();
 
-        return normalized.matches(".*\\b(?:hey|oye)\\s+verity\\b.*");
+        if (normalized.matches(".*\\\\b(?:hey|oye)\\\\s+herobrine\\\\b.*")) {
+            return MentionTrigger.HEROBRINE;
+        }
+        if (normalized.matches(".*\\\\b(?:hey|oye)\\\\s+hero\\\\b.*")) {
+            return MentionTrigger.HERO;
+        }
+        return MentionTrigger.NONE;
     }
 
     public static List<HerobrineChatMemory.Message> recentChat() {
