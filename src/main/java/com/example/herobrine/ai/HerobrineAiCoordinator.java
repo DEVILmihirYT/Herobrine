@@ -81,7 +81,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
                 player.getUUID(),
                 player.getName().getString(),
                 hero.getStage(),
-                "explicit_verity_mention",
+                "explicit_herobrine_mention",
                 HerobrineManager.recentChat(player.getUUID()),
                 HerobrineManager.trackedPlayers(),
                 worldState.getAiMemories(player.getUUID()),
@@ -105,6 +105,42 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
 
         lastMentionTick.put(player.getUUID(), now);
         submitRequest(level, hero, player, request, false);
+    }
+
+    /**
+     * Deterministic identity response for Stage 1/2 when a player addresses
+     * the character as "Hero". This guarantees the requested identity line
+     * in both text chat and the ElevenLabs voice path without depending on
+     * provider availability.
+     */
+    public void respondToHeroIdentity(
+            ServerLevel level,
+            HerobrineEntity hero,
+            ServerPlayer player
+    ) {
+        if (closed.get()
+                || hero == null
+                || !hero.isAlive()
+                || player == null
+                || !player.isAlive()
+                || hero.getStage() == HerobrineStage.STAGE_3) {
+            return;
+        }
+
+        long now = level.getGameTime();
+        Long last = lastMentionTick.get(player.getUUID());
+        if (last != null && now - last < MENTION_COOLDOWN_TICKS) {
+            return;
+        }
+        lastMentionTick.put(player.getUUID(), now);
+
+        level.getServer().execute(() -> {
+            if (isCurrentServerStateValid(hero, player, hero.getStage())) {
+                String identity = "I am Herobrine.";
+                player.sendSystemMessage(Component.literal(identity));
+                HerobrineVoiceService.speak(level, hero, identity);
+            }
+        });
     }
 
     public void requestFromChatBatch(
