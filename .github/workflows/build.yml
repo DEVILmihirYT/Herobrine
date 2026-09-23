@@ -88,39 +88,3 @@ jobs:
           fi
 
           exit "$failed"
-
-      - name: Create GitHub release
-        if: github.ref_type == 'branch' && github.ref_name == 'main'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v1.0.0
-          target_commitish: main
-          name: Herobrine AI v1.0.0
-          body: |
-            # Herobrine AI v1.0.0
-
-            AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
-
-            ## Included
-            - 3-stage Herobrine progression
-            - AI-driven contextual behavior
-            - Gemini to Groq fallback chain
-            - Natural English, Hindi and Hinglish dialogue
-            - Persistent AI memories and player relationships
-            - Stage 3 grudge and delayed-revenge system
-            - ElevenLabs voice output
-            - Custom Herobrine rendering and stage textures
-            - Herobrine Castle progression
-            - Dark Frame / Dark Portal endgame
-            - 10-second Doomsday sequence
-            - Mashaal system
-
-            ## Requirements
-            - Minecraft Java Edition 26.1
-            - Fabric Loader 0.19.5
-            - Fabric API for Minecraft 26.1
-            - Java 25
-
-            Runtime API keys are required for AI and voice features and are not bundled in the JAR.
-          files: build/libs/*.jar
-          fail_on_unmatched_files: true
