@@ -3,7 +3,6 @@ name: Build Herobrine AI
 on:
   push:
     branches: ["main", "release/**"]
-    tags: ["v*"]
   pull_request:
     branches: ["main"]
 
@@ -90,41 +89,42 @@ jobs:
           exit "$failed"
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/release/')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Herobrine AI ${{ github.ref_name }}
-          body: |
-            # Herobrine AI ${{ github.ref_name }}
+        if: startsWith(github.ref, 'refs/heads/release/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.0.0 build/libs/*.jar \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Herobrine AI v1.0.0" \
+            --notes-file <(cat <<'EOF'
+# Herobrine AI v1.0.0
 
-            AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
+AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
 
-            ## Included
-            - 3-stage Herobrine progression
-            - AI-driven contextual behavior
-            - Gemini → Groq fallback chain
-            - Natural English, Hindi and Hinglish dialogue
-            - Persistent AI memories and player relationships
-            - Stage 3 grudge and delayed-revenge system
-            - ElevenLabs voice output
-            - Custom Herobrine rendering and stage textures
-            - Herobrine Castle progression
-            - Dark Frame / Dark Portal endgame
-            - 10-second Doomsday sequence
-            - Mashaal system
+## Included
+- 3-stage Herobrine progression
+- AI-driven contextual behavior
+- Gemini → Groq fallback chain
+- Natural English, Hindi and Hinglish dialogue
+- Persistent AI memories and player relationships
+- Stage 3 grudge and delayed-revenge system
+- ElevenLabs voice output
+- Custom Herobrine rendering and stage textures
+- Herobrine Castle progression
+- Dark Frame / Dark Portal endgame
+- 10-second Doomsday sequence
+- Mashaal system
 
-            ## Requirements
-            - Minecraft Java Edition 26.1
-            - Fabric Loader 0.19.5
-            - Fabric API for Minecraft 26.1
-            - Java 25
+## Requirements
+- Minecraft Java Edition 26.1
+- Fabric Loader 0.19.5
+- Fabric API for Minecraft 26.1
+- Java 25
 
-            ## AI / Voice
-            Runtime API keys are required for AI and voice features. API keys are not bundled in the JAR.
+## AI / Voice
+Runtime API keys are required for AI and voice features. API keys are not bundled in the JAR.
 
-            The JAR attached to this release is built directly from this tagged commit.
-          target_commitish: \${{ github.sha }}
-          files: build/libs/*.jar
-          fail_on_unmatched_files: true
-          generate_release_notes: false
+The JAR attached to this release is built directly from this release commit.
+EOF
+)
