@@ -95,17 +95,14 @@ jobs:
         run: |
           gh release create v1.0.0 build/libs/*.jar \
             --repo "${{ github.repository }}" \
-            --target "${{ github.sha }}" \
+            --target b30490b7517fade39331ed2e92abae5993f0e134 \
             --title "Herobrine AI v1.0.0" \
-            --notes-file <(cat <<'EOF'
-# Herobrine AI v1.0.0
+            --notes "AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
 
-AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
-
-## Included
+Included:
 - 3-stage Herobrine progression
 - AI-driven contextual behavior
-- Gemini → Groq fallback chain
+- Gemini to Groq fallback chain
 - Natural English, Hindi and Hinglish dialogue
 - Persistent AI memories and player relationships
 - Stage 3 grudge and delayed-revenge system
@@ -116,15 +113,10 @@ AI-driven Herobrine experience for Minecraft Java Edition 26.1 using Fabric.
 - 10-second Doomsday sequence
 - Mashaal system
 
-## Requirements
+Requirements:
 - Minecraft Java Edition 26.1
 - Fabric Loader 0.19.5
 - Fabric API for Minecraft 26.1
 - Java 25
 
-## AI / Voice
-Runtime API keys are required for AI and voice features. API keys are not bundled in the JAR.
-
-The JAR attached to this release is built directly from this release commit.
-EOF
-)
+Runtime API keys are required for AI and voice features and are not bundled in the JAR."
