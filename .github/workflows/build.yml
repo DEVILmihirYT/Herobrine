@@ -2,7 +2,7 @@ name: Build Herobrine AI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "release/**"]
     tags: ["v*"]
   pull_request:
     branches: ["main"]
@@ -90,7 +90,7 @@ jobs:
           exit "$failed"
 
       - name: Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/release/')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -124,6 +124,7 @@ jobs:
             Runtime API keys are required for AI and voice features. API keys are not bundled in the JAR.
 
             The JAR attached to this release is built directly from this tagged commit.
+          target_commitish: \${{ github.sha }}
           files: build/libs/*.jar
           fail_on_unmatched_files: true
           generate_release_notes: false
