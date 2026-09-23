@@ -219,10 +219,10 @@ public final class HerobrineManager {
                 .replaceAll("[^a-z0-9]+", " ")
                 .trim();
 
-        if (normalized.matches(".*\\\\b(?:hey|oye)\\\\s+herobrine\\\\b.*")) {
+        if (normalized.matches(".*\\b(?:hey|oye)\\s+herobrine\\b.*")) {
             return MentionTrigger.HEROBRINE;
         }
-        if (normalized.matches(".*\\\\b(?:hey|oye)\\\\s+hero\\\\b.*")) {
+        if (normalized.matches(".*\\b(?:hey|oye)\\s+hero\\b.*")) {
             return MentionTrigger.HERO;
         }
         return MentionTrigger.NONE;
