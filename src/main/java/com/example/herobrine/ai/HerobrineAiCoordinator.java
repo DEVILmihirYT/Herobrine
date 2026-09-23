@@ -99,7 +99,7 @@ public final class HerobrineAiCoordinator implements AutoCloseable {
         long now = level.getGameTime();
         Long last = lastMentionTick.get(player.getUUID());
         if (last != null && now - last < MENTION_COOLDOWN_TICKS) {
-            HerobrineMod.LOGGER.debug("Ignoring repeated AI mention from {} during cooldown", player.getGameProfile().name());
+            HerobrineMod.LOGGER.debug("Ignoring repeated Herobrine mention from {} during cooldown", player.getGameProfile().name());
             return;
         }
 
