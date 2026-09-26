@@ -1,1 +1,1 @@
-{"parent":"minecraft:block/cube","textures":{"particle":"herobrineai:block/dark_frame","north":"herobrineai:block/dark_frame","south":"herobrineai:block/dark_frame","east":"herobrineai:block/dark_frame","west":"herobrineai:block/dark_frame","up":"herobrineai:block/dark_frame","down":"herobrineai:block/dark_frame"}}
+{"parent":"minecraft:block/cube_all","textures":{"all":"herobrineai:block/dark_portal"}}
