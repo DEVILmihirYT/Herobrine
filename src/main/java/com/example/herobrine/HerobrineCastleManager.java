@@ -1,21 +1,32 @@
 package com.example.herobrine;
 
 import com.example.HerobrineMod;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.Heightmap;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 public final class HerobrineCastleManager {
-    private static final int MIN_DISTANCE = 6000;
+    private static final int MIN_DISTANCE = 10000;
     private static final int MAX_DISTANCE = 12000;
+    private static final int MAX_CASTLE_BLOCKS = 2_000_000;
+    private static final Identifier CASTLE_TEMPLATE = Identifier.fromNamespaceAndPath(
+            HerobrineMod.MOD_ID,
+            "old_katsugana_castle"
+    );
 
     private HerobrineCastleManager() {
     }
@@ -31,7 +42,11 @@ public final class HerobrineCastleManager {
 
             revealCastleCoordinates(endLevel.getServer(), killer);
         });
-        HerobrineMod.LOGGER.info("Herobrine castle coordinate trigger initialized");
+        HerobrineMod.LOGGER.info(
+                "Herobrine castle trigger initialized: {}-{} blocks from world spawn",
+                MIN_DISTANCE,
+                MAX_DISTANCE
+        );
     }
 
     public static void revealCastleCoordinates(MinecraftServer server, ServerPlayer killer) {
@@ -62,13 +77,50 @@ public final class HerobrineCastleManager {
         BlockPos castle = new BlockPos(x, y, z);
         state.revealCoordinates(castle);
 
+        if (!state.isCastleGenerated()) {
+            if (!placeCastle(server, overworld, castle)) {
+                HerobrineMod.LOGGER.error("Could not load the bundled Old Katsugana Castle template");
+                return;
+            }
+            state.markCastleGenerated();
+        }
+
         sendCoordinates(killer, castle);
 
         HerobrineMod.LOGGER.info(
-                "Herobrine castle coordinates revealed at {}, {}, {}; schematic generation pending",
+                "Old Katsugana Castle generated at {}, {}, {} from bundled castle data",
                 castle.getX(),
                 castle.getY(),
                 castle.getZ()
+        );
+    }
+
+    private static boolean placeCastle(MinecraftServer server, ServerLevel overworld, BlockPos castle) {
+        Optional<StructureTemplate> template = server.getStructureManager().get(CASTLE_TEMPLATE);
+        if (template.isEmpty()) {
+            return false;
+        }
+
+        StructureTemplate structure = template.get();
+        long volume = (long) structure.getSize().getX()
+                * structure.getSize().getY()
+                * structure.getSize().getZ();
+        if (volume > MAX_CASTLE_BLOCKS) {
+            HerobrineMod.LOGGER.error(
+                    "Castle template is {} blocks in volume, above the configured {} block safety limit",
+                    volume,
+                    MAX_CASTLE_BLOCKS
+            );
+            return false;
+        }
+
+        return structure.placeInWorld(
+                overworld,
+                castle,
+                castle,
+                new StructurePlaceSettings(),
+                RandomSource.create(),
+                Block.UPDATE_ALL
         );
     }
 
