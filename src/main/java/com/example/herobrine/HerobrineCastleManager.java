@@ -25,7 +25,7 @@ public final class HerobrineCastleManager {
     private static final int MAX_CASTLE_BLOCKS = 5_000_000;
     private static final Identifier CASTLE_TEMPLATE = Identifier.fromNamespaceAndPath(
             HerobrineMod.MOD_ID,
-            "old_katsugana_castle"
+            "herobrine_castle"
     );
 
     private HerobrineCastleManager() {
@@ -79,7 +79,7 @@ public final class HerobrineCastleManager {
 
         if (!state.isCastleGenerated()) {
             if (!placeCastle(server, overworld, castle)) {
-                HerobrineMod.LOGGER.error("Could not load the bundled Old Katsugana Castle template");
+                HerobrineMod.LOGGER.error("Could not load the bundled Herobrine Castle template");
                 return;
             }
             state.markCastleGenerated();
@@ -88,7 +88,7 @@ public final class HerobrineCastleManager {
         sendCoordinates(killer, castle);
 
         HerobrineMod.LOGGER.info(
-                "Old Katsugana Castle generated at {}, {}, {} from bundled castle data",
+                "Herobrine Castle generated at {}, {}, {} from bundled castle data",
                 castle.getX(),
                 castle.getY(),
                 castle.getZ()
@@ -129,7 +129,7 @@ public final class HerobrineCastleManager {
                 Component.literal("CASTLE: " + castle.getX() + " " + castle.getZ())
         ));
         player.sendSystemMessage(Component.literal(
-                "Herobrine's Castle coordinates: X=" + castle.getX()
+                "Herobrine Castle coordinates: X=" + castle.getX()
                         + " Y=" + castle.getY() + " Z=" + castle.getZ()
         ));
         player.sendSystemMessage(Component.literal(
