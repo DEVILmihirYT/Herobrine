@@ -22,7 +22,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 public final class HerobrineCastleManager {
     private static final int MIN_DISTANCE = 10000;
     private static final int MAX_DISTANCE = 12000;
-    private static final int MAX_CASTLE_BLOCKS = 2_000_000;
+    private static final int MAX_CASTLE_BLOCKS = 5_000_000;
     private static final Identifier CASTLE_TEMPLATE = Identifier.fromNamespaceAndPath(
             HerobrineMod.MOD_ID,
             "old_katsugana_castle"
