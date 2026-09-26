@@ -12,22 +12,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public final class ModBlocks {
-    /**
-     * Dark Frame is a world-generation/endgame block only.
-     *
-     * It deliberately has no BlockItem, no recipe and no creative-tab entry.
-     * The future castle schematic will place the block directly into the world.
-     */
     public static final Block DARK_FRAME = registerBlockOnly(
             "dark_frame",
             DarkFrameBlock::new,
             BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN).strength(50.0F, 1200.0F)
     );
 
-    /**
-     * The portal is also a world-generated/event block only.
-     * It has no inventory item.
-     */
     public static final Block DARK_PORTAL = registerBlockOnly(
             "dark_portal",
             DarkPortalBlock::new,
@@ -38,7 +28,7 @@ public final class ModBlocks {
 
     public static void registerModBlocks() {
         HerobrineMod.LOGGER.info(
-                "Registering Dark Frame and Dark Portal as world-only blocks"
+                "Registering Dark Frame and Dark Portal blocks"
         );
     }
 
